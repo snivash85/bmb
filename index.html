@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Генератор карточек музыкального лото</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:#eee;display:flex;height:100vh}
+#panel{width:400px;min-width:400px;background:#fff;padding:12px;overflow:auto;border-right:1px solid #ccc}
+#panel h3{margin:14px 0 6px;font-size:14px;border-bottom:1px solid #ddd}
+label{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin:4px 0;gap:8px}
+label input,label select{width:160px}textarea{width:100%;height:150px;font-size:12px}
+button{padding:7px 10px;margin:3px 2px;cursor:pointer}#info,#exp,#gstat{font-size:12px;margin-top:6px}.err{color:#c00}.ok{color:#080}
+#flogos,#olist{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.fl{position:relative;border:1px solid #ccc;padding:2px;background:#fafafa}.fl img{height:36px;display:block}
+.fl b{position:absolute;top:-7px;right:-7px;background:#c00;color:#fff;border-radius:50%;width:16px;height:16px;font-size:11px;text-align:center;line-height:16px;cursor:pointer}
+.fl i{position:absolute;bottom:-6px;left:-4px;font-style:normal;font-size:11px;cursor:pointer;background:#ddd;padding:0 3px}
+#olist button{font-size:12px;padding:3px 6px}#olist button.on{background:#6a1b9a;color:#fff}
+#props{border:1px dashed #6a1b9a;padding:6px;margin-top:6px;background:#faf5fc}
+.box{border:1px solid #ddd;background:#f6fbf6;padding:6px;margin-top:6px}
+.gm{background:#f4f7ff}
+.game{border:1px solid #ccd;background:#fff;padding:5px;margin:5px 0;font-size:12px}.game.act{border-color:#6a1b9a;background:#f6eefa}
+.game button{font-size:12px;padding:3px 6px}.game .gh{display:flex;gap:6px;align-items:center}
+#bar{position:sticky;top:0;z-index:50;background:#fffbe6;border-bottom:1px solid #ddd;padding:6px 12px;font-size:13px;display:flex;gap:12px;align-items:center}
+#sizeinfo{padding:6px 12px;font-size:12px;color:#444;background:#f7f7f7;border-bottom:1px solid #ddd}
+#view{flex:1;overflow:auto}#wrap{padding:12px}
+#sheet{display:flex;flex-wrap:wrap;gap:var(--gap,8mm);align-content:flex-start}
+.rwrap{display:grid;grid-template-columns:22px max-content;grid-template-rows:22px max-content}
+.rcorner{grid-column:1;grid-row:1;background:#fffbe6;border-right:1px solid #666;border-bottom:1px solid #666;font-size:8px;text-align:center;line-height:22px;color:#666}
+.rh{grid-column:2;grid-row:1;position:relative;height:22px;border-bottom:1px solid #666;background-color:#fffbe6;
+ background-image:linear-gradient(to right,#555 1px,transparent 1px),linear-gradient(to right,#555 1px,transparent 1px),linear-gradient(to right,#222 1px,transparent 1px);
+ background-size:1mm 4px,5mm 8px,10mm 14px;background-repeat:repeat-x;background-position:left bottom}
+.rv{grid-column:1;grid-row:2;position:relative;width:22px;border-right:1px solid #666;background-color:#fffbe6;
+ background-image:linear-gradient(to bottom,#555 1px,transparent 1px),linear-gradient(to bottom,#555 1px,transparent 1px),linear-gradient(to bottom,#222 1px,transparent 1px);
+ background-size:4px 1mm,8px 5mm,14px 10mm;background-repeat:repeat-y;background-position:right top}
+.rh span,.rv span{position:absolute;font-size:8px;color:#222;line-height:1}
+.rh span{top:1px;margin-left:2px}.rv span{left:1px;margin-top:2px}
+.rwrap>.card{grid-column:2;grid-row:2}
+.card{position:relative;overflow:hidden;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column}
+.card .head,.card .foot{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;flex:0 0 auto}
+.card .head,.card .grid,.card .foot{position:relative;z-index:2}
+.card .head img,.card .foot img{object-fit:contain}
+.grid{display:grid;flex:1 1 auto;align-content:start}
+.cell{display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;word-break:break-word;line-height:1.1}
+.cell.free{font-weight:bold}
+.obj{position:absolute;transform-origin:center;user-select:none;-webkit-user-select:none}
+.obj img{width:100%;display:block;pointer-events:none}
+.obj.t{white-space:pre-wrap;line-height:1.1}
+.edit .head,.edit .grid,.edit .foot,.edit .cell{pointer-events:none}
+.edit .obj{cursor:move;outline:1px dashed rgba(106,27,154,.5)}
+.edit .obj.sel{outline:2px solid #e91e63}
+.hd{position:absolute;right:-6px;bottom:-6px;width:12px;height:12px;background:#e91e63;border:1px solid #fff;cursor:nwse-resize}
+@media print{body{display:block;background:#fff;height:auto}#panel,#bar,#sizeinfo,.rh,.rv,.rcorner{display:none}.rwrap{display:block}#view{overflow:visible}#wrap{padding:0}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4;margin:8mm}.obj{outline:none!important}#sheet{zoom:1!important}}
+</style></head><body>
+<div id="panel">
+<h2 style="margin:0">🎵 Музыкальное лото</h2>
+<h3>Список песен / исполнителей</h3>
+<div style="font-size:12px;color:#555">Можно с нумерацией и названиями: «1. Исполнитель - Песня», «2) Исполнитель — Песня», «3;Исполнитель;Песня». На карточки попадут только исполнители (без номеров и песен).</div>
+<textarea id="list"></textarea>
+<input type="file" id="fileList" accept=".txt,.csv">
+<div id="info"></div>
+<h3>🗂 Архив игр</h3>
+<div class="box gm">
+<label>Название игры<input id="gname" value="" placeholder="Например: Корпоратив"></label>
+<label>Дата игры<input type="date" id="gdate"></label>
+<label>Сохранять вместе с дизайном<input type="checkbox" id="gdesign" style="width:auto"></label>
+<label>Не повторять карточки прошлых наборов<input type="checkbox" id="avoid" checked style="width:auto"></label>
+<button onclick="saveGame(false)">💾 Сохранить игру</button><button onclick="saveGame(true)">➕ Как новую</button>
+<button onclick="commitSet()">📌 Зафиксировать набор</button>
+<div id="gstat"></div>
+<div style="margin-top:6px"><button onclick="selAll(true)">☑ Все игры</button><button onclick="selAll(false)">☐ Снять выбор</button></div>
+<button onclick="genSelected()" id="genSel" style="width:100%;background:#e8f0ff">🎲 Новый набор из отмеченных игр (0)</button>
+<div id="games"></div>
+<button onclick="exportGames()">⬇ Экспорт архива</button>
+<label>Импорт архива<input type="file" id="gimport" accept=".json"></label>
+<div style="font-size:11px;color:#777">В заголовке/подвале можно писать {игра} и {дата} — подставятся данные игры.</div>
+</div>
+<h3>Карточки</h3>
+<label>Количество карточек<input type="number" id="count" value="12" min="1"></label>
+<label>Столбцов<input type="number" id="cols" value="5" min="1" max="12"></label>
+<label>Строк<input type="number" id="rows" value="3" min="1" max="12"></label>
+<label>Центральная «свободная» клетка<input type="checkbox" id="free" style="width:auto"></label>
+<label>Текст свободной клетки<input id="freeText" value="★"></label>
+<label>Заголовок<input id="title" value="МУЗЫКАЛЬНОЕ ЛОТО"></label>
+<label>Текст в подвале<input id="footer" value=""></label>
+<label>Нумеровать карточки<input type="checkbox" id="num" checked style="width:auto"></label>
+<h3>Размеры карточки (мм)</h3>
+<label>Линейка в просмотре<input type="checkbox" id="ruler" checked style="width:auto"></label>
+<label>Ширина карточки<input type="number" id="cw" value="130"></label>
+<label>Высота карточки (0 = авто)<input type="number" id="chh" value="0" min="0"></label>
+<label>Таблица при фикс. высоте<select id="gv"><option value="start">Сверху</option><option value="center">По центру</option><option value="end">Снизу</option><option value="stretch">Растянуть по высоте</option></select></label>
+<label>Высота шапки<input type="number" id="hh" value="18"></label>
+<label>Высота подвала<input type="number" id="fh" value="12"></label>
+<label>Отступ между карточками<input type="number" id="gap" value="6"></label>
+<label>Показывать рамку карточки<input type="checkbox" id="cbon" checked style="width:auto"></label>
+<label>Толщина рамки карточки (px)<input type="number" id="cbw" value="2" step="0.5" min="0"></label>
+<label>Скругление карточки (мм)<input type="number" id="rad" value="3"></label>
+<h3>Таблица с названиями (мм)</h3>
+<label>Высота ячейки<input type="number" id="ch" value="16" step="0.5"></label>
+<label>Отступ таблицы сверху<input type="number" id="pt" value="0" step="0.5" min="0"></label>
+<label>Отступ таблицы справа<input type="number" id="pr" value="0" step="0.5" min="0"></label>
+<label>Отступ таблицы снизу<input type="number" id="pb" value="0" step="0.5" min="0"></label>
+<label>Отступ таблицы слева<input type="number" id="pl" value="0" step="0.5" min="0"></label>
+<label>Расстояние между ячейками<input type="number" id="cgap" value="0" step="0.5" min="0"></label>
+<label>Внутренний отступ в ячейке<input type="number" id="cpad" value="1" step="0.5" min="0"></label>
+<label>Скругление ячеек<input type="number" id="crad" value="0" step="0.5" min="0"></label>
+<label>Толщина линий ячеек (px)<input type="number" id="bw" value="1" step="0.5" min="0"></label>
+<label>Выравнивание текста в ячейке<select id="calign"><option value="center">По центру</option><option value="left">По левому краю</option><option value="right">По правому краю</option></select></label>
+<label>Вертикально<select id="cvalign"><option value="center">По центру</option><option value="flex-start">Сверху</option><option value="flex-end">Снизу</option></select></label>
+<label>Межстрочный интервал<input type="number" id="clh" value="1.1" step="0.05" min="0.8"></label>
+<h3>Шапка и подвал (мм)</h3>
+<label>Отступ шапки слева/справа<input type="number" id="hpad" value="3" step="0.5" min="0"></label>
+<label>Положение заголовка<select id="halign"><option value="center">По центру</option><option value="space-between">Между логотипами</option><option value="flex-start">Слева</option><option value="flex-end">Справа</option></select></label>
+<label>Отступ подвала слева/справа<input type="number" id="fpad" value="2" step="0.5" min="0"></label>
+<h3>Шрифты</h3>
+<label>Шрифт ячеек<select class="fonts" id="font"></select></label>
+<label>Размер шрифта ячеек (pt)<input type="number" id="fs" value="9" step="0.5"></label>
+<label>Шрифт заголовка<select class="fonts" id="tfont"></select></label>
+<label>Размер заголовка (pt)<input type="number" id="tfs" value="20"></label>
+<label>Шрифт подвала<select class="fonts" id="ffont"></select></label>
+<label>Размер подвала (pt)<input type="number" id="ffs" value="9" step="0.5"></label>
+<label>Жирный текст ячеек<input type="checkbox" id="bold" checked style="width:auto"></label>
+<label>ВСЕ ЗАГЛАВНЫЕ<input type="checkbox" id="upper" style="width:auto"></label>
+<h3>Цвета текста</h3>
+<label>Заголовок<input type="color" id="tc" value="#ffffff"></label>
+<label>Номер карточки<input type="color" id="nc" value="#ffffff"></label>
+<label>Текст ячеек<input type="color" id="xc" value="#222222"></label>
+<label>Текст ячеек (2-й цвет, шахматка)<input type="color" id="xc2" value="#222222"></label>
+<label>Свободная клетка<input type="color" id="freeC" value="#c62828"></label>
+<label>Текст подвала<input type="color" id="ftc" value="#222222"></label>
+<label>Обводка текста ячеек (px)<input type="number" id="sw" value="0" step="0.1" min="0"></label>
+<label>Цвет обводки текста<input type="color" id="swc" value="#ffffff"></label>
+<h3>Цвета фона и прозрачность</h3>
+<label>Фон карточки<input type="color" id="bg" value="#ffffff"></label>
+<label>Цвет рамки карточки<input type="color" id="cbc" value="#6a1b9a"></label>
+<label>Цвет шапки<input type="color" id="hc" value="#6a1b9a"></label>
+<label>Прозрачность шапки <span id="hop_v"></span><input type="range" id="hop" min="0" max="1" step="0.05" value="1"></label>
+<label>Цвет подвала<input type="color" id="fc" value="#ffffff"></label>
+<label>Прозрачность подвала <span id="fop_v"></span><input type="range" id="fop" min="0" max="1" step="0.05" value="0"></label>
+<label>Цвет ячеек<input type="color" id="cc" value="#fff8e1"></label>
+<label>Чередовать цвет ячеек<input type="checkbox" id="zebra" style="width:auto"></label>
+<label>2-й цвет ячеек<input type="color" id="cc2" value="#f3e5f5"></label>
+<label>Прозрачность ячеек <span id="cop_v"></span><input type="range" id="cop" min="0" max="1" step="0.05" value="1"></label>
+<label>Цвет линий ячеек<input type="color" id="lc" value="#6a1b9a"></label>
+<label>Прозрачность линий ячеек<input type="range" id="bop" min="0" max="1" step="0.05" value="1"></label>
+<h3>Фоновая картинка карточки</h3>
+<label>Файл<input type="file" id="bgimg" accept="image/*"></label>
+<label>Режим<select id="bgfit"><option value="cover">Заполнить (обрезка)</option><option value="contain">Вписать</option><option value="100% 100%">Растянуть</option><option value="tile">Плиткой</option><option value="custom">Свой размер (%)</option></select></label>
+<label>Размер, % ширины<input type="number" id="bgscale" value="50" min="1" max="500"></label>
+<label>Смещение по X, %<input type="range" id="bgx" min="0" max="100" value="50"></label>
+<label>Смещение по Y, %<input type="range" id="bgy" min="0" max="100" value="50"></label>
+<label>Прозрачность картинки<input type="range" id="bgop" min="0" max="1" step="0.05" value="0.15"></label>
+<button onclick="imgs.bgimg='';render()">Убрать фон-картинку</button>
+<h3>Логотипы шапки</h3>
+<label>Лого слева<input type="file" id="logoL" accept="image/*"></label>
+<label>Лого справа<input type="file" id="logoR" accept="image/*"></label>
+<label>Высота лого шапки (мм)<input type="number" id="lh" value="14"></label>
+<h3>Логотипы в подвале</h3>
+<label>Добавить (можно несколько)<input type="file" id="logoF" accept="image/*" multiple></label>
+<div id="flogos"></div>
+<label>Расположение<select id="falign"><option value="center">По центру</option><option value="flex-start">По левому краю</option><option value="flex-end">По правому краю</option><option value="space-between">Равномерно, по краям</option><option value="space-around">Равные поля вокруг</option><option value="space-evenly">Равные промежутки</option></select></label>
+<label>Высота лого (мм)<input type="number" id="flh" value="9"></label>
+<label>Расстояние между лого (мм)<input type="number" id="fgap" value="4"></label>
+<label>Текст подвала<select id="fpos"><option value="before">Перед логотипами</option><option value="after">После логотипов</option><option value="hide">Скрыть</option></select></label>
+<label>Одинаковая ширина лого<input type="checkbox" id="feq" style="width:auto"></label>
+<h3>✏️ Объекты на карточке</h3>
+<div style="font-size:12px;color:#555">Картинки и тексты в любом месте. Включите «Редактор макета» и перетаскивайте мышью.</div>
+<label>Добавить картинки<input type="file" id="objImg" accept="image/*" multiple></label>
+<button onclick="addText()">+ Текст</button>
+<div id="olist"></div>
+<div id="props"></div>
+<h3>📦 Сохранение карточек</h3>
+<div class="box">
+<label>Разрешение PNG/PDF<select id="xscale"><option value="2">Среднее (×2)</option><option value="3" selected>Высокое (×3)</option><option value="4">Очень высокое (×4)</option></select></label>
+<label>Раскладка PDF<select id="xmode"><option value="single">1 карточка = 1 страница</option><option value="a4">A4, несколько на странице</option></select></label>
+<label>Номер карточки<input type="number" id="xn" value="1" min="1"></label>
+<button onclick="expOne('png')">PNG выбранной</button><button onclick="expOne('pdf')">PDF выбранной</button><br>
+<button onclick="expAllPng()">Все PNG (ZIP)</button><button onclick="expAllPdfOne()">Все в одном PDF</button><button onclick="expAllPdfZip()">Все PDF отдельно (ZIP)</button>
+<div id="exp"></div></div>
+<h3>📋 Список для ведущего (PDF)</h3>
+<div class="box">
+<label>Заголовок списка<input id="ltitle" value="Список исполнителей"></label>
+<label>Что выводить<select id="lmode"><option value="artists">Только исполнители (без повторов)</option><option value="songs">Исполнитель — песня</option></select></label>
+<label>Порядок<select id="lsort"><option value="orig">Как в списке</option><option value="alpha">По алфавиту</option></select></label>
+<label>Колонок<input type="number" id="lcols" value="2" min="1" max="4"></label>
+<label>Размер шрифта (pt)<input type="number" id="lfs" value="12" min="6" max="36"></label>
+<button onclick="expList()">⬇ PDF со списком</button></div>
+<h3>Действия</h3>
+<button onclick="toggleEdit()" id="editBtn">✏️ Редактор макета</button>
+<button onclick="generate()">🔄 Сгенерировать заново</button>
+<button onclick="doPrint()">🖨 Печать (A4)</button>
+<button onclick="saveCfg()">💾 Сохранить настройки</button>
+<label>Загрузить настройки<input type="file" id="cfgFile" accept=".json"></label>
+<button onclick="downloadCsv()">⬇ Состав карточек CSV</button>
+</div>
+<div id="view"><div id="bar" style="display:none"><b>Редактор макета</b> показана карточка №1. Тяните объекты мышью, розовый квадрат — размер, Delete — удалить, стрелки — сдвиг.
+<label style="width:220px">Масштаб<input type="range" id="zoom" min="0.5" max="2.5" step="0.05" value="1.2" style="width:120px"></label></div>
+<div id="sizeinfo"></div>
+<div id="wrap"><div id="sheet"></div></div></div>
+<script>
+const $=id=>document.getElementById(id);
+const FONTS=['Arial','Georgia','Verdana','Impact','Comic Sans MS','Courier New','Trebuchet MS','Times New Roman','Tahoma','Palatino Linotype','Lucida Console'];
+document.querySelectorAll('.fonts').forEach(s=>s.innerHTML=FONTS.map(f=>`<option>${f}</option>`).join(''));
+$('tfont').value='Impact';
+const imgs={logoL:'',logoR:'',bgimg:'',footer:[]};
+let cards=[],objs=[],sel=null,edit=false,uid=1,activeId=null,sources=[];
+const selG=new Set();
+const ids=['count','cols','rows','free','freeText','title','footer','num','ruler','cw','chh','gv','hh','fh','gap','cbon','cbw','rad','ch','pt','pr','pb','pl','cgap','cpad','crad','bw','calign','cvalign','clh','hpad','halign','fpad','font','fs','tfont','tfs','ffont','ffs','bold','upper','tc','nc','xc','xc2','freeC','ftc','sw','swc','bg','cbc','hc','hop','fc','fop','cc','zebra','cc2','cop','lc','bop','lh','bgop','bgfit','bgscale','bgx','bgy','falign','flh','fgap','fpos','feq','list'];
+function val(id){const e=$(id);return e.type==='checkbox'?e.checked:e.value}
+function rgba(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
+function esc(s){return String(s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmtDate(s){const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(s||'');return m?`${m[3]}.${m[2]}.${m[1]}`:''}
+function fmt(s){return String(s).split('{игра}').join(val('gname')).split('{дата}').join(fmtDate(val('gdate')))}
+function parseSongs(text){
+ const out=[];
+ (text||'').split(/\r?\n/).forEach(raw=>{
+  let s=raw.trim().replace(/^\ufeff/,'');if(!s)return;
+  let artist='',song='';
+  if(/[;\t]/.test(s)){
+   const f=s.split(/[;\t]/).map(x=>x.trim().replace(/^"|"$/g,'').trim()).filter(Boolean);
+   while(f.length>1&&/^\d+[.)]?$/.test(f[0]))f.shift();
+   artist=f[0]||'';song=f.slice(1).join(' — ');
+  }else{
+   s=s.replace(/^["']|["']$/g,'').replace(/^\s*(?:№|#)?\d+\s*[.)]\s*/,'').replace(/^\s*\d+\s*[-–—:]\s+/,'');
+   const m=s.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+   if(m){artist=m[1].trim();song=m[2].trim()}else artist=s.trim();
+  }
+  if(artist)out.push({artist,song});
+ });
+ return out;
+}
+function artists(){const seen=new Set();return parseSongs($('list').value).map(x=>x.artist).filter(a=>{const k=a.toLowerCase();if(seen.has(k))return false;seen.add(k);return true})}
+function comb(n,k){let r=1;for(let i=1;i<=k;i++){r=r*(n-k+i)/i;if(r>1e15)return Infinity}return Math.round(r)}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const keyOf=names=>names.slice().sort().join('\u0001');
+function generate(){
+ const A=artists(),songsN=parseSongs($('list').value).length,cols=+$('cols').value,rows=+$('rows').value,free=$('free').checked;
+ const k=cols*rows-(free&&cols*rows%2?1:0),n=A.length,want=+$('count').value,info=$('info');
+ cards=[];
+ const base=`Строк в списке: ${songsN}. Исполнителей: ${n}. `;
+ if(n<k){info.innerHTML='<span class="err">'+base+'Нужно минимум '+k+' исполнителей на карточку.</span>';render();return}
+ const nameSet=new Set(A),src=games.filter(x=>sources.includes(x.id));
+ const valid=$('avoid').checked?[...new Set(src.flatMap(g=>g.issued||[]))].filter(key=>key.split('\u0001').every(nm=>nameSet.has(nm))):[];
+ const seen=new Set(valid),prior=seen.size;
+ const max=comb(n,k)-prior;let cnt=want,msg='';
+ if(want>max){cnt=Math.max(0,max);msg=' Доступно уникальных карточек: '+cnt+'.'}
+ let tries=0;
+ while(cards.length<cnt&&tries<cnt*200+10000){tries++;
+  const idx=shuffle([...Array(n).keys()]).slice(0,k),key=keyOf(idx.map(i=>A[i]));
+  if(seen.has(key))continue;seen.add(key);cards.push(idx)}
+ info.innerHTML='<span class="ok">'+base+'Карточек: '+cards.length+' (все уникальные'+(prior?', не повторяют '+prior+' ранее выданных':'')+'). Ячеек: '+k+'.'+msg+'</span>';
+ $('xn').max=cards.length;
+ render();
+}
+/* ---------- архив игр ---------- */
+const GK='lotto_games_v1';
+function loadGames(){try{return JSON.parse(localStorage.getItem(GK)||'[]')}catch(e){return []}}
+let games=loadGames();
+function persist(){try{localStorage.setItem(GK,JSON.stringify(games));return true}catch(e){alert('Не удалось сохранить архив (переполнено или запрещено браузером). Снимите «Сохранять вместе с дизайном» или используйте «Экспорт архива».');return false}}
+function getCfg(){const o={};ids.forEach(i=>o[i]=val(i));o.imgs=imgs;o.objs=objs;return o}
+function applyCfg(o,keepList){
+ ids.forEach(i=>{if(i in o&&!(keepList&&i==='list')){const el=$(i);el.type==='checkbox'?el.checked=o[i]:el.value=o[i]}});
+ Object.assign(imgs,o.imgs||{});if(!Array.isArray(imgs.footer))imgs.footer=[];
+ objs=o.objs||[];uid=Math.max(0,...objs.map(x=>x.id))+1;sel=null;renderFlogos();showProps();
+}
+function saveGame(asNew){
+ const name=$('gname').value.trim()||'Игра без названия',date=$('gdate').value||today();
+ let g=asNew?null:games.find(x=>x.id===activeId);
+ const isNew=!g;if(isNew){g={id:Date.now().toString(36),issued:[],sets:0};games.push(g)}
+ g.name=name;g.date=date;g.list=$('list').value;g.saved=Date.now();
+ g.design=$('gdesign').checked?JSON.parse(JSON.stringify(getCfg())):null;
+ if(!persist()){if(isNew)games.pop();return}
+ activeId=g.id;sources=[g.id];renderGames();generate();
+ $('gstat').innerHTML='<span class="ok">'+(isNew?'Игра добавлена в архив.':'Игра обновлена.')+'</span>';
+}
+function commitSet(){
+ const src=games.filter(x=>sources.includes(x.id));
+ if(!src.length){$('gstat').innerHTML='<span class="err">Сначала сохраните игру или откройте её из архива.</span>';return}
+ if(!cards.length)return;const A=artists(),keys=cards.map(c=>keyOf(c.map(i=>A[i])));
+ src.forEach(g=>{const s=new Set(g.issued||[]);keys.forEach(k=>s.add(k));g.issued=[...s];g.sets=(g.sets||0)+1});
+ if(persist()){renderGames();$('gstat').innerHTML='<span class="ok">Набор зафиксирован в играх: '+src.map(g=>esc(g.name)).join(', ')+'. Эти карточки больше не повторятся.</span>'}
+}
+function openGame(id,newSet){
+ const g=games.find(x=>x.id===id);if(!g)return;
+ activeId=id;sources=[id];$('list').value=g.list;$('gname').value=g.name;$('gdate').value=g.date;
+ if(!newSet&&g.design)applyCfg(g.design,true);
+ renderGames();generate();
+ $('gstat').innerHTML='<span class="ok">'+(newSet?'Создан новый набор карточек для игры «'+esc(g.name)+'».':'Игра открыта.')+'</span>';
+}
+function genSelected(){
+ const sg=games.filter(g=>selG.has(g.id));
+ if(!sg.length){$('gstat').innerHTML='<span class="err">Отметьте галочкой хотя бы одну игру в архиве.</span>';return}
+ if(sg.length===1){openGame(sg[0].id,true);return}
+ activeId=null;sources=sg.map(g=>g.id);
+ $('list').value=sg.map(g=>g.list.trim()).join('\n');
+ $('gname').value=sg.map(g=>g.name).join(' + ').slice(0,60);$('gdate').value=today();
+ renderGames();generate();
+ $('gstat').innerHTML='<span class="ok">Объединено игр: '+sg.length+'. Исполнителей в общем пуле: '+artists().length+'. Новый набор создан случайно. Чтобы сохранить объединённый список, нажмите «Сохранить игру».</span>';
+}
+function selAll(v){selG.clear();if(v)games.forEach(g=>selG.add(g.id));renderGames()}
+function delGame(id){const g=games.find(x=>x.id===id);if(!g||!confirm('Удалить игру «'+g.name+'» из архива?'))return;games=games.filter(x=>x.id!==id);selG.delete(id);sources=sources.filter(s=>s!==id);if(activeId===id)activeId=null;persist();renderGames()}
+function renderGames(){
+ const box=$('games');box.innerHTML='';
+ $('genSel').textContent='🎲 Новый набор из отмеченных игр ('+[...selG].filter(i=>games.some(g=>g.id===i)).length+')';
+ if(!games.length){box.innerHTML='<div style="font-size:12px;color:#777">Архив пуст.</div>';return}
+ games.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.saved-a.saved).forEach(g=>{
+  const d=document.createElement('div');d.className='game'+(g.id===activeId?' act':'');
+  const songs=parseSongs(g.list).length;
+  d.innerHTML=`<div class="gh"><input type="checkbox" ${selG.has(g.id)?'checked':''}><span><b>${esc(g.name)}</b> · ${fmtDate(g.date)}</span></div>строк: ${songs} · наборов: ${g.sets||0} · карточек выдано: ${(g.issued||[]).length}${g.design?' · с дизайном':''}<br>`;
+  d.querySelector('input').onchange=e=>{e.target.checked?selG.add(g.id):selG.delete(g.id);renderGames()};
+  [['Открыть',()=>openGame(g.id,false)],['🔄 Новый набор',()=>openGame(g.id,true)],['🗑',()=>delGame(g.id)]].forEach(([t,f])=>{const b=document.createElement('button');b.textContent=t;b.onclick=f;d.appendChild(b)});
+  box.appendChild(d)});
+}
+function exportGames(){dl('lotto-games-'+today()+'.json',JSON.stringify(games),'application/json')}
+$('gimport').onchange=e=>{const r=new FileReader();r.onload=()=>{try{const a=JSON.parse(r.result);if(!Array.isArray(a))throw 0;a.forEach(x=>{const i=games.findIndex(g=>g.id===x.id);if(i>=0)games[i]=x;else games.push(x)});persist();renderGames();$('gstat').innerHTML='<span class="ok">Импортировано игр: '+a.length+'</span>'}catch(err){$('gstat').innerHTML='<span class="err">Неверный файл архива.</span>'}};r.readAsText(e.target.files[0]);e.target.value=''};
+/* ---------- объекты и редактор ---------- */
+function renderFlogos(){
+ const box=$('flogos');box.innerHTML='';
+ imgs.footer.forEach((s,i)=>{const d=document.createElement('div');d.className='fl';
+  d.innerHTML=`<img src="${s}"><b title="Удалить">×</b><i title="Сдвинуть влево">◀</i>`;
+  d.querySelector('b').onclick=()=>{imgs.footer.splice(i,1);renderFlogos();render()};
+  d.querySelector('i').onclick=()=>{if(i>0){[imgs.footer[i-1],imgs.footer[i]]=[imgs.footer[i],imgs.footer[i-1]];renderFlogos();render()}};
+  box.appendChild(d)});
+}
+function addObj(o){o.id=uid++;o.x=o.x??10;o.y=o.y??10;o.w=o.w??20;o.op=1;o.rot=0;o.layer='front';objs.push(o);sel=o.id;showProps();render()}
+function addText(){addObj({type:'text',text:'Текст',fs:14,color:'#222222',font:'Arial',bold:true,w:40,align:'center',name:'Текст'})}
+function cur(){return objs.find(o=>o.id===sel)}
+function showProps(){
+ const L=$('olist');L.innerHTML='';
+ objs.forEach(o=>{const b=document.createElement('button');b.textContent=(o.type==='text'?'T ':'🖼 ')+(o.name||o.id);if(o.id===sel)b.className='on';b.onclick=()=>{sel=o.id;showProps();render()};L.appendChild(b)});
+ const P=$('props'),o=cur();
+ if(!o){P.innerHTML='<i style="font-size:12px">Объект не выбран</i>';return}
+ const num=(k,l,min,max,st)=>`<label>${l}<input type="number" data-k="${k}" min="${min}" max="${max}" step="${st}" value="${o[k]}"></label>`;
+ const rng=(k,l,min,max,st)=>`<label>${l}<input type="range" data-k="${k}" min="${min}" max="${max}" step="${st}" value="${o[k]}"></label>`;
+ let h=num('x','X, % карточки',-100,200,0.5)+num('y','Y, % карточки',-100,200,0.5)+num('w','Ширина, %',1,300,0.5)+num('rot','Поворот, °',-360,360,1)+rng('op','Прозрачность (1 = непрозр.)',0,1,0.05)
+ +`<label>Слой<select data-k="layer"><option value="front"${o.layer==='front'?' selected':''}>Поверх всего</option><option value="back"${o.layer==='back'?' selected':''}>Под ячейками</option></select></label>`;
+ if(o.type==='text')h=`<label>Текст<textarea data-k="text" style="height:50px;width:160px">${esc(o.text)}</textarea></label>`+num('fs','Размер, pt',4,200,1)
+ +`<label>Шрифт<select data-k="font">${FONTS.map(f=>`<option${f===o.font?' selected':''}>${f}</option>`).join('')}</select></label><label>Цвет<input type="color" data-k="color" value="${o.color}"></label>`
+ +`<label>Выравнивание<select data-k="align">${['left','center','right'].map(a=>`<option${a===o.align?' selected':''}>${a}</option>`).join('')}</select></label>`+h;
+ h+=`<button id="pDup">Дублировать</button><button id="pDel">Удалить</button><button id="pTop">На передний план</button>`;
+ P.innerHTML=h;
+ P.querySelectorAll('[data-k]').forEach(el=>el.oninput=()=>{const k=el.dataset.k;o[k]=el.type==='number'||el.type==='range'?+el.value:el.value;render()});
+ $('pDel').onclick=delSel;
+ $('pDup').onclick=()=>{const c=JSON.parse(JSON.stringify(o));c.x+=3;c.y+=3;addObj(c)};
+ $('pTop').onclick=()=>{objs=objs.filter(x=>x!==o);objs.push(o);render()};
+}
+function syncProps(){const o=cur();if(!o)return;$('props').querySelectorAll('[data-k]').forEach(el=>{if(['x','y','w','rot'].includes(el.dataset.k))el.value=Math.round(o[el.dataset.k]*10)/10})}
+function delSel(){objs=objs.filter(o=>o.id!==sel);sel=null;showProps();render()}
+function mkObj(o){
+ const e=document.createElement('div');e.className='obj'+(o.type==='text'?' t':'')+(edit&&o.id===sel?' sel':'');e.dataset.id=o.id;
+ e.style.cssText=`left:${o.x}%;top:${o.y}%;width:${o.w}%;opacity:${o.op};transform:rotate(${o.rot}deg);z-index:${o.layer==='back'?1:5}`;
+ if(o.type==='text'){e.style.font=`${o.bold?'bold ':''}${o.fs}pt ${o.font}`;e.style.color=o.color;e.style.textAlign=o.align;e.textContent=fmt(o.text)}
+ else e.innerHTML=`<img src="${o.src}">`;
+ if(edit){
+  if(o.id===sel){const h=document.createElement('div');h.className='hd';e.appendChild(h);h.onpointerdown=ev=>startDrag(ev,o,e,'resize')}
+  e.onpointerdown=ev=>{if(ev.target.classList.contains('hd'))return;sel=o.id;showProps();startDrag(ev,o,e,'move')};
+ }
+ return e;
+}
+function startDrag(ev,o,e,mode){
+ ev.preventDefault();ev.stopPropagation();
+ const R=e.parentElement.getBoundingClientRect(),sx=ev.clientX,sy=ev.clientY,ox=o.x,oy=o.y,ow=o.w;
+ document.querySelectorAll('.obj.sel').forEach(x=>x.classList.remove('sel'));e.classList.add('sel');
+ const mv=m=>{const dx=(m.clientX-sx)/R.width*100,dy=(m.clientY-sy)/R.height*100;
+  if(mode==='move'){o.x=ox+dx;o.y=oy+dy;e.style.left=o.x+'%';e.style.top=o.y+'%'}
+  else{o.w=Math.max(1,ow+dx);e.style.width=o.w+'%'}syncProps()};
+ const up=()=>{document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);render()};
+ document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
+}
+document.addEventListener('keydown',e=>{
+ if(!edit||!cur()||/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
+ const o=cur(),s=e.shiftKey?2:0.5;
+ if(e.key==='Delete'||e.key==='Backspace'){delSel();e.preventDefault();return}
+ const m={ArrowLeft:['x',-s],ArrowRight:['x',s],ArrowUp:['y',-s],ArrowDown:['y',s]}[e.key];
+ if(m){o[m[0]]+=m[1];e.preventDefault();syncProps();render()}
+});
+function toggleEdit(v){edit=v===undefined?!edit:v;$('bar').style.display=edit?'flex':'none';$('editBtn').textContent=edit?'✅ Выйти из редактора':'✏️ Редактор макета';render()}
+function doPrint(){if(edit)toggleEdit(false);setTimeout(()=>window.print(),150)}
+function bgCss(){
+ const f=val('bgfit'),pos=`${val('bgx')}% ${val('bgy')}%`;
+ let size='cover',rep='no-repeat';
+ if(f==='contain')size='contain';else if(f==='100% 100%')size='100% 100%';
+ else if(f==='tile'){size=val('bgscale')+'% auto';rep='repeat'}else if(f==='custom')size=val('bgscale')+'% auto';
+ return `background:url(${imgs.bgimg}) ${pos}/${size} ${rep}`;
+}
+function buildCard(c,ci){
+ const A=artists(),cols=+$('cols').value,rows=+$('rows').value,free=$('free').checked&&cols*rows%2===1;
+ const mid=Math.floor(cols*rows/2),cw=+$('cw').value,ch=+$('ch').value,lh=$('lh').value,fixedH=+val('chh')>0;
+ const d=document.createElement('div');d.className='card';
+ d.style.cssText=`width:${cw}mm;${fixedH?`height:${val('chh')}mm;`:''}background:${val('bg')};border:${$('cbon').checked?val('cbw')+'px solid '+val('cbc'):'none'};border-radius:${val('rad')}mm`;
+ if(imgs.bgimg){const b=document.createElement('div');b.style.cssText=`position:absolute;inset:0;${bgCss()};opacity:${val('bgop')};pointer-events:none;z-index:0`;d.appendChild(b)}
+ const hd=document.createElement('div');hd.className='head';
+ hd.style.cssText=`height:${val('hh')}mm;padding:0 ${val('hpad')}mm;justify-content:${val('halign')};background:${rgba(val('hc'),val('hop'))};color:${val('tc')};font:${val('tfs')}pt ${val('tfont')}`;
+ const logo=s=>s?`<img src="${s}" style="height:${lh}mm">`:'';
+ const numTxt=$('num').checked?` <span style="color:${val('nc')}">№${ci+1}</span>`:'';
+ hd.innerHTML=logo(imgs.logoL)+'<span>'+esc(fmt(val('title')))+numTxt+'</span>'+logo(imgs.logoR);
+ d.appendChild(hd);
+ const g=document.createElement('div');g.className='grid';
+ const gv=val('gv'),rowsCss=(fixedH&&gv==='stretch')?`grid-template-rows:repeat(${rows},1fr)`:`grid-auto-rows:${ch}mm;align-content:${gv==='stretch'?'start':gv}`;
+ g.style.cssText=`grid-template-columns:repeat(${cols},1fr);${rowsCss};gap:${val('cgap')}mm;padding:${val('pt')}mm ${val('pr')}mm ${val('pb')}mm ${val('pl')}mm`;
+ let p=0;
+ for(let i=0;i<cols*rows;i++){
+  const cell=document.createElement('div');cell.className='cell';
+  const z=$('zebra').checked&&((Math.floor(i/cols)+i%cols)%2);
+  const isFree=free&&i===mid,sw=+val('sw');
+  cell.style.cssText=`background:${rgba(z?val('cc2'):val('cc'),val('cop'))};border:${val('bw')}px solid ${rgba(val('lc'),val('bop'))};border-radius:${val('crad')}mm;font:${$('bold').checked?'bold ':''}${val('fs')}pt ${val('font')};line-height:${val('clh')};padding:${val('cpad')}mm;color:${isFree?val('freeC'):(z?val('xc2'):val('xc'))};justify-content:${val('calign')==='center'?'center':val('calign')==='left'?'flex-start':'flex-end'};text-align:${val('calign')};align-items:${val('cvalign')};${sw>0?`-webkit-text-stroke:${sw}px ${val('swc')};paint-order:stroke fill;`:''}${$('upper').checked?'text-transform:uppercase':''}`;
+  if(isFree){cell.classList.add('free');cell.textContent=val('freeText')}
+  else cell.textContent=A[c[p++]]??'—';
+  g.appendChild(cell)}
+ d.appendChild(g);
+ const txt=fmt(val('footer')),fl=imgs.footer;
+ if((txt&&val('fpos')!=='hide')||fl.length){
+  const f=document.createElement('div');f.className='foot';
+  f.style.cssText=`height:${val('fh')}mm;padding:0 ${val('fpad')}mm;font:${val('ffs')}pt ${val('ffont')};color:${val('ftc')};background:${rgba(val('fc'),val('fop'))};justify-content:${val('falign')};gap:${val('fgap')}mm`;
+  const t=(txt&&val('fpos')!=='hide')?'<span>'+esc(txt)+'</span>':'';
+  const L=fl.map(s=>`<img src="${s}" style="height:${val('flh')}mm;${$('feq').checked?'flex:1 1 0;min-width:0;max-width:'+(cw/Math.max(fl.length,1)-4)+'mm':''}">`).join('');
+  f.innerHTML=val('fpos')==='after'?L+t:t+L;
+  d.appendChild(f)}
+ objs.forEach(o=>d.appendChild(mkObj(o)));
+ if(edit)d.onpointerdown=ev=>{if(!ev.target.closest('.obj')){sel=null;showProps();document.querySelectorAll('.obj.sel').forEach(x=>x.classList.remove('sel'))}};
+ return d;
+}
+function render(){
+ ['cop','hop','fop'].forEach(k=>$(k+'_v').textContent=Math.round($(k).value*100)+'%');
+ const cols=+$('cols').value,rows=+$('rows').value,cw=+$('cw').value;
+ const sh=$('sheet');sh.style.setProperty('--gap',$('gap').value+'mm');sh.innerHTML='';sh.style.zoom=1;
+ sh.className=edit?'edit':'';
+ let list=cards;
+ if(edit){list=cards.length?cards.slice(0,1):[Array.from({length:cols*rows},(_,i)=>i)]}
+ let firstH=0;
+ list.forEach((c,ci)=>{
+  const card=buildCard(c,ci);
+  if(val('ruler')){
+   const w=document.createElement('div');w.className='rwrap';
+   const corner=document.createElement('div');corner.className='rcorner';corner.textContent='мм';
+   const rh=document.createElement('div');rh.className='rh';rh.style.width=cw+'mm';
+   for(let i=10;i<=cw;i+=10){const s=document.createElement('span');s.style.left=i+'mm';s.textContent=i;rh.appendChild(s)}
+   const rv=document.createElement('div');rv.className='rv';
+   w.append(corner,rh,rv,card);sh.appendChild(w);
+   const hpx=card.offsetHeight;rv.style.height=hpx+'px';
+   const hmm=hpx*25.4/96;
+   for(let i=10;i<=hmm;i+=10){const s=document.createElement('span');s.style.top=i+'mm';s.textContent=i;rv.appendChild(s)}
+  }else sh.appendChild(card);
+  if(ci===0)firstH=card.offsetHeight*25.4/96;
+ });
+ $('sizeinfo').textContent=list.length?`Размер карточки: ${cw} × ${firstH.toFixed(1)} мм`+(+val('chh')>0?' (высота задана)':' (высота по содержимому)')+(val('cbon')?'':' · без рамки'):'';
+ sh.style.zoom=edit?$('zoom').value:1;
+}
+ids.filter(i=>!['list','count','cols','rows','free'].includes(i)).forEach(i=>$(i).addEventListener('input',render));
+['gname','gdate'].forEach(i=>$(i).addEventListener('input',render));
+$('zoom').addEventListener('input',render);
+['count','cols','rows','free','list','avoid'].forEach(i=>$(i).addEventListener('change',generate));
+const rd=f=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f)});
+$('fileList').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('list').value=r.result;generate()};r.readAsText(f,'utf-8')};
+['logoL','logoR','bgimg'].forEach(k=>$(k).onchange=async e=>{const f=e.target.files[0];if(!f)return;imgs[k]=await rd(f);render()});
+$('logoF').onchange=async e=>{const a=await Promise.all([...e.target.files].map(rd));imgs.footer.push(...a);e.target.value='';renderFlogos();render()};
+$('objImg').onchange=async e=>{const fs=[...e.target.files];for(const f of fs){addObj({type:'img',src:await rd(f),name:f.name.slice(0,14),x:10+objs.length*3,y:10+objs.length*3})}e.target.value=''};
+function saveCfg(){dl('lotto-settings.json',JSON.stringify(getCfg()),'application/json')}
+$('cfgFile').onchange=e=>{const r=new FileReader();r.onload=()=>{applyCfg(JSON.parse(r.result),false);generate()};r.readAsText(e.target.files[0])};
+function downloadCsv(){const A=artists();dl('cards.csv','\ufeff'+cards.map((c,i)=>(i+1)+';'+c.map(x=>'"'+A[x].replace(/"/g,'""')+'"').join(';')).join('\n'),'text/csv')}
+function dl(n,t,m){dlBlob(n,new Blob([t],{type:m}))}
+function dlBlob(n,b){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),10000)}
+/* ---------- экспорт: PNG / PDF / ZIP ---------- */
+const tick=()=>new Promise(r=>setTimeout(r,10));
+const pad=(i,n=3)=>String(i).padStart(n,'0');
+const status=t=>$('exp').innerHTML=t;
+const b64=d=>{const s=atob(d.split(',')[1]),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u};
+async function cardCanvas(ci,scale,white){
+ const prev=edit;edit=false;const el=buildCard(cards[ci],ci);edit=prev;
+ const host=document.createElement('div');host.style.cssText='position:fixed;left:-20000px;top:0;font-family:system-ui,Arial,sans-serif';
+ host.appendChild(el);document.body.appendChild(host);
+ const r=el.getBoundingClientRect(),W=Math.round(r.width),H=Math.round(r.height);
+ const xml=new XMLSerializer().serializeToString(el);host.remove();
+ const css=document.querySelector('style').textContent.replace(/@media print\{[\s\S]*$/,'');
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W*scale}" height="${H*scale}" viewBox="0 0 ${W} ${H}"><foreignObject x="0" y="0" width="${W}" height="${H}"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:system-ui,Arial,sans-serif;width:${W}px;height:${H}px"><style>${css}</style>${xml}</div></foreignObject></svg>`;
+ const img=new Image();
+ await new Promise((res,rej)=>{img.onload=res;img.onerror=()=>rej(new Error('render'));img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)});
+ const cv=document.createElement('canvas');cv.width=W*scale;cv.height=H*scale;const x=cv.getContext('2d');
+ if(white){x.fillStyle='#fff';x.fillRect(0,0,cv.width,cv.height)}
+ x.drawImage(img,0,0,cv.width,cv.height);
+ return {cv,W,H};
+}
+const toPng=cv=>new Promise(r=>cv.toBlob(r,'image/png'));
+async function cardJpg(ci){const s=+$('xscale').value,{cv,W,H}=await cardCanvas(ci,s,true);return {jpg:b64(cv.toDataURL('image/jpeg',0.95)),pw:cv.width,ph:cv.height,w:W*0.75,h:H*0.75}}
+function buildPdf(pages){
+ const enc=new TextEncoder(),chunks=[],offs=[];let pos=0;
+ const push=u=>{chunks.push(u);pos+=u.length},str=s=>push(enc.encode(s));
+ let num=3;pages.forEach(p=>{p.no=num++;p.cno=num++;p.items.forEach(it=>it.no=num++)});const total=num-1;
+ const obj=(no,fn)=>{offs[no]=pos;str(no+' 0 obj\n');fn();str('\nendobj\n')};
+ push(new Uint8Array([37,80,68,70,45,49,46,52,10,37,226,227,207,211,10]));
+ obj(1,()=>str('<< /Type /Catalog /Pages 2 0 R >>'));
+ obj(2,()=>str(`<< /Type /Pages /Count ${pages.length} /Kids [${pages.map(p=>p.no+' 0 R').join(' ')}] >>`));
+ pages.forEach(p=>{
+  obj(p.no,()=>str(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${p.w.toFixed(2)} ${p.h.toFixed(2)}] /Resources << /XObject << ${p.items.map((it,i)=>`/I${i} ${it.no} 0 R`).join(' ')} >> >> /Contents ${p.cno} 0 R >>`));
+  const ops=p.items.map((it,i)=>`q ${it.w.toFixed(2)} 0 0 ${it.h.toFixed(2)} ${it.x.toFixed(2)} ${(p.h-it.y-it.h).toFixed(2)} cm /I${i} Do Q\n`).join('');
+  obj(p.cno,()=>{str(`<< /Length ${ops.length} >>\nstream\n${ops}endstream`)});
+  p.items.forEach(it=>obj(it.no,()=>{str(`<< /Type /XObject /Subtype /Image /Width ${it.pw} /Height ${it.ph} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${it.jpg.length} >>\nstream\n`);push(it.jpg);str('\nendstream')}));
+ });
+ const xp=pos;str(`xref\n0 ${total+1}\n0000000000 65535 f \n`);
+ for(let i=1;i<=total;i++)str(String(offs[i]).padStart(10,'0')+' 00000 n \n');
+ str(`trailer\n<< /Size ${total+1} /Root 1 0 R >>\nstartxref\n${xp}\n%%EOF`);
+ return new Blob(chunks,{type:'application/pdf'});
+}
+function layoutPdf(list){
+ if($('xmode').value==='single')return list.map(c=>({w:c.w,h:c.h,items:[{...c,x:0,y:0}]}));
+ const PW=595.28,PH=841.89,M=8*72/25.4,G=(+$('gap').value)*72/25.4,pages=[];
+ let pg=null,x=M,y=M,rowH=0;
+ const np=()=>{pg={w:PW,h:PH,items:[]};pages.push(pg);x=M;y=M;rowH=0};np();
+ list.forEach(c=>{
+  const s=Math.min(1,(PW-2*M)/c.w),w=c.w*s,h=c.h*s;
+  if(x+w>PW-M+0.1&&x>M){x=M;y+=rowH+G;rowH=0}
+  if(y+h>PH-M+0.1&&pg.items.length){np()}
+  pg.items.push({...c,x,y,w,h});x+=w+G;rowH=Math.max(rowH,h)});
+ return pages;
+}
+const crcT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=crcT[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function buildZip(files){
+ const enc=new TextEncoder(),parts=[],cen=[];let pos=0;
+ const u16=v=>[v&255,v>>8&255],u32=v=>[v&255,v>>8&255,v>>16&255,v>>>24&255];
+ files.forEach(f=>{
+  const nm=enc.encode(f.name),crc=crc32(f.data),sz=f.data.length;
+  const lh=new Uint8Array([0x50,0x4b,3,4,...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(sz),...u32(sz),...u16(nm.length),...u16(0)]);
+  parts.push(lh,nm,f.data);
+  cen.push(new Uint8Array([0x50,0x4b,1,2,...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(sz),...u32(sz),...u16(nm.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(pos)]),nm);
+  pos+=lh.length+nm.length+sz});
+ let cs=0;cen.forEach(c=>cs+=c.length);
+ const end=new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...u16(files.length),...u16(files.length),...u32(cs),...u32(pos),0,0]);
+ return new Blob([...parts,...cen,end],{type:'application/zip'});
+}
+function guard(){if(!cards.length){status('<span class="err">Нет карточек. Проверьте список исполнителей.</span>');return false}return true}
+function idxSel(){const n=Math.min(cards.length,Math.max(1,+$('xn').value||1));return n-1}
+async function safe(fn){try{await fn()}catch(e){status('<span class="err">Ошибка экспорта ('+e.message+'). Попробуйте Chrome/Edge или кнопку «Печать» → «Сохранить как PDF».</span>')}}
+const expOne=t=>safe(async()=>{if(!guard())return;const i=idxSel();status('Готовлю карточку №'+(i+1)+'…');await tick();
+ if(t==='png'){const{cv}=await cardCanvas(i,+$('xscale').value,false);dlBlob('card_'+pad(i+1)+'.png',await toPng(cv))}
+ else{const c=await cardJpg(i);dlBlob('card_'+pad(i+1)+'.pdf',buildPdf(layoutPdf([c])))}
+ status('<span class="ok">Готово.</span>')});
+const expAllPng=()=>safe(async()=>{if(!guard())return;const files=[];
+ for(let i=0;i<cards.length;i++){status(`PNG ${i+1} из ${cards.length}…`);await tick();const{cv}=await cardCanvas(i,+$('xscale').value,false);files.push({name:'card_'+pad(i+1)+'.png',data:new Uint8Array(await(await toPng(cv)).arrayBuffer())})}
+ dlBlob('cards_png.zip',buildZip(files));status('<span class="ok">Готово: '+files.length+' PNG в архиве.</span>')});
+const expAllPdfOne=()=>safe(async()=>{if(!guard())return;const list=[];
+ for(let i=0;i<cards.length;i++){status(`Подготовка ${i+1} из ${cards.length}…`);await tick();list.push(await cardJpg(i))}
+ dlBlob('cards.pdf',buildPdf(layoutPdf(list)));status('<span class="ok">Готово: один PDF, карточек '+list.length+'.</span>')});
+const expAllPdfZip=()=>safe(async()=>{if(!guard())return;const files=[];
+ for(let i=0;i<cards.length;i++){status(`PDF ${i+1} из ${cards.length}…`);await tick();const c=await cardJpg(i);files.push({name:'card_'+pad(i+1)+'.pdf',data:new Uint8Array(await buildPdf(layoutPdf([c])).arrayBuffer())})}
+ dlBlob('cards_pdf.zip',buildZip(files));status('<span class="ok">Готово: '+files.length+' PDF в архиве.</span>')});
+const expList=()=>safe(async()=>{
+ let A=$('lmode').value==='songs'?parseSongs($('list').value).map(s=>s.song?s.artist+' — '+s.song:s.artist):artists();
+ if(!A.length){status('<span class="err">Список пуст.</span>');return}
+ if($('lsort').value==='alpha')A=A.slice().sort((a,b)=>a.localeCompare(b,'ru'));
+ const W=1240,H=1754,Mx=110,top=230,bot=130,cols=Math.max(1,+$('lcols').value||1),fs=(+$('lfs').value||12)*150/72,rowH=fs*1.55;
+ const per=Math.max(1,Math.floor((H-top-bot)/rowH)),perPage=per*cols,pagesN=Math.ceil(A.length/perPage),colW=(W-2*Mx)/cols,pages=[];
+ const nw=String(A.length).length,gm=[val('gname'),fmtDate(val('gdate'))].filter(Boolean).join(' · ');
+ for(let p=0;p<pagesN;p++){
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
+  x.fillStyle='#fff';x.fillRect(0,0,W,H);x.fillStyle='#222';x.textBaseline='alphabetic';
+  x.font='bold 54px Arial';x.fillText($('ltitle').value,Mx,130);
+  x.font='24px Arial';x.fillStyle='#666';x.fillText((gm?gm+' · ':'')+'Всего: '+A.length,Mx,175);
+  x.strokeStyle='#999';x.beginPath();x.moveTo(Mx,195);x.lineTo(W-Mx,195);x.stroke();
+  x.fillStyle='#222';
+  A.slice(p*perPage,(p+1)*perPage).forEach((name,k)=>{
+   const col=Math.floor(k/per),row=k%per,n=p*perPage+k+1,X=Mx+col*colW,Y=top+row*rowH+fs;
+   let f=fs;const numW=fs*0.62*(nw+1.6);
+   x.font=`bold ${f}px Arial`;x.textAlign='right';x.fillText(n+'.',X+numW,Y);
+   x.textAlign='left';f=fs;x.font=`${f}px Arial`;
+   const avail=colW-numW-fs*0.6-20;while(x.measureText(name).width>avail&&f>fs*0.5){f-=1;x.font=`${f}px Arial`}
+   x.fillText(name,X+numW+fs*0.4,Y)});
+  x.font='22px Arial';x.fillStyle='#888';x.textAlign='center';x.fillText(`Стр. ${p+1} / ${pagesN}`,W/2,H-60);
+  pages.push({w:595.28,h:841.89,items:[{jpg:b64(cv.toDataURL('image/jpeg',0.95)),pw:W,ph:H,x:0,y:0,w:595.28,h:841.89}]})}
+ dlBlob('songs_list.pdf',buildPdf(pages));status('<span class="ok">Готово: PDF со списком, позиций '+A.length+', страниц '+pagesN+'.</span>')});
+const demo=[['Баста','Сансара'],['Ленинград','Экспонат'],['Сплин','Выхода нет'],['Земфира','Искала'],['Мумий Тролль','Утекай'],['Кино','Группа крови'],['ДДТ','Осень'],['Би-2','Мой рок-н-ролл'],['Руки Вверх','Алёшка'],['Иванушки International','Тучи'],['Ноггано','Я за тебя'],['Алиса','Небо славян'],['Агата Кристи','Как на войне'],['Король и Шут','Лесник'],['Нервы','Самый лучший день'],['Мираж','Музыка нас связала'],['Любэ','Комбат'],['Сектор Газа','Лирика'],['Многоточие','Не забывай'],['Градусы','Голая'],['Звери','До скорой встречи'],['Чайф','Аргентина-Ямайка 5:0'],['Наутилус Помпилиус','Скованные одной цепью'],['Тату','Нас не догонят'],['Дискотека Авария','Малышка'],['Кровосток','Сквозь'],['Пицца','Оружие'],['Полматери','Ночь'],['Макс Корж','Жить в кайф'],['Zivert','Life']];
+$('list').value=demo.map((d,i)=>`${i+1}. ${d[0]} - ${d[1]}`).join('\n');
+$('gdate').value=today();
+showProps();renderGames();generate();
+</script></body></html>
