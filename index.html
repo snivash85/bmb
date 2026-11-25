@@ -2,26 +2,43 @@
 <html lang="ru"><head><meta charset="utf-8"><title>Генератор карточек музыкального лото</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:#eee;display:flex;height:100vh}
-#panel{width:400px;min-width:400px;background:#fff;padding:12px;overflow:auto;border-right:1px solid #ccc}
-#panel h3{margin:14px 0 6px;font-size:14px;border-bottom:1px solid #ddd}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Arial,sans-serif;background:#eee;display:flex;flex-direction:column;height:100vh;font-size:14px}
+#top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 12px;background:#4a148c;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3);z-index:60}
+#top button{margin:0;padding:6px 10px;border:1px solid #fff5;background:#6a1b9a;color:#fff;border-radius:5px}
+#top button:hover{background:#7b2cb0}#top button.primary{background:#e91e63;border-color:#e91e63}
+#top .sp{flex:1}.inl{display:inline-flex;align-items:center;gap:5px;font-size:13px;margin:0;justify-content:flex-start}
+.inl input[type=number]{width:58px}.inl input[type=range]{width:90px}.inl input[type=checkbox]{width:auto}
+#main{flex:1;display:flex;min-height:0}
+.pane{overflow:auto;background:#fff;padding:10px}.hid{display:none!important}
+#gpane{width:340px;min-width:340px;border-right:1px solid #ccc;background:#f7f8ff}
+#panel{width:380px;min-width:380px;border-right:1px solid #ccc}
+h3{margin:12px 0 6px;font-size:14px;border-bottom:1px solid #ddd;padding-bottom:3px}
 label{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin:4px 0;gap:8px}
-label input,label select{width:160px}textarea{width:100%;height:150px;font-size:12px}
-button{padding:7px 10px;margin:3px 2px;cursor:pointer}#info,#exp,#gstat{font-size:12px;margin-top:6px}.err{color:#c00}.ok{color:#080}
+label input,label select{width:150px}textarea{width:100%;height:140px;font-size:12px}
+button{padding:6px 9px;margin:3px 2px;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}
+#info,#exp,#gstat{font-size:12px;margin-top:6px}.err{color:#c00}.ok{color:#080}.small{font-size:12px;color:#555}
+#gactive{font-size:13px;margin:4px 0 8px;padding:6px;background:#fff;border:1px dashed #99a;border-radius:4px}
+details{border:1px solid #e0d6ea;border-radius:6px;margin:6px 0;background:#fcfaff}
+summary{cursor:pointer;padding:7px 9px;font-weight:600;font-size:13px;color:#4a148c}
+details[open]>summary{border-bottom:1px solid #e0d6ea}.dbody{padding:4px 9px 8px}
 #flogos,#olist{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .fl{position:relative;border:1px solid #ccc;padding:2px;background:#fafafa}.fl img{height:36px;display:block}
 .fl b{position:absolute;top:-7px;right:-7px;background:#c00;color:#fff;border-radius:50%;width:16px;height:16px;font-size:11px;text-align:center;line-height:16px;cursor:pointer}
 .fl i{position:absolute;bottom:-6px;left:-4px;font-style:normal;font-size:11px;cursor:pointer;background:#ddd;padding:0 3px}
 #olist button{font-size:12px;padding:3px 6px}#olist button.on{background:#6a1b9a;color:#fff}
 #props{border:1px dashed #6a1b9a;padding:6px;margin-top:6px;background:#faf5fc}
-.box{border:1px solid #ddd;background:#f6fbf6;padding:6px;margin-top:6px}
-.gm{background:#f4f7ff}
-.game{border:1px solid #ccd;background:#fff;padding:5px;margin:5px 0;font-size:12px}.game.act{border-color:#6a1b9a;background:#f6eefa}
+.game{border:1px solid #ccd;background:#fff;padding:5px;margin:5px 0;font-size:12px;border-radius:4px}.game.act{border-color:#6a1b9a;background:#f6eefa}
 .game button{font-size:12px;padding:3px 6px}.game .gh{display:flex;gap:6px;align-items:center}
-#bar{position:sticky;top:0;z-index:50;background:#fffbe6;border-bottom:1px solid #ddd;padding:6px 12px;font-size:13px;display:flex;gap:12px;align-items:center}
-#sizeinfo{padding:6px 12px;font-size:12px;color:#444;background:#f7f7f7;border-bottom:1px solid #ddd}
-#view{flex:1;overflow:auto}#wrap{padding:12px}
+#glist{max-height:none}
+#view{flex:1;overflow:auto;min-width:0}
+#bar{background:#fffbe6;border-bottom:1px solid #ddd;padding:6px 12px;font-size:13px}
+#sizeinfo{padding:6px 12px;font-size:12px;color:#444;background:#f7f7f7;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:40}
+#wrap{padding:12px}
 #sheet{display:flex;flex-wrap:wrap;gap:var(--gap,8mm);align-content:flex-start}
+dialog{width:540px;max-width:95vw;border:1px solid #888;border-radius:8px;padding:14px;max-height:90vh;overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+.box{border:1px solid #ddd;background:#f6fbf6;padding:6px;margin-top:6px;border-radius:4px}
 .rwrap{display:grid;grid-template-columns:22px max-content;grid-template-rows:22px max-content}
 .rcorner{grid-column:1;grid-row:1;background:#fffbe6;border-right:1px solid #666;border-bottom:1px solid #666;font-size:8px;text-align:center;line-height:22px;color:#666}
 .rh{grid-column:2;grid-row:1;position:relative;height:22px;border-bottom:1px solid #666;background-color:#fffbe6;
@@ -47,34 +64,50 @@ button{padding:7px 10px;margin:3px 2px;cursor:pointer}#info,#exp,#gstat{font-siz
 .edit .obj{cursor:move;outline:1px dashed rgba(106,27,154,.5)}
 .edit .obj.sel{outline:2px solid #e91e63}
 .hd{position:absolute;right:-6px;bottom:-6px;width:12px;height:12px;background:#e91e63;border:1px solid #fff;cursor:nwse-resize}
-@media print{body{display:block;background:#fff;height:auto}#panel,#bar,#sizeinfo,.rh,.rv,.rcorner{display:none}.rwrap{display:block}#view{overflow:visible}#wrap{padding:0}
+@media print{body{display:block;background:#fff;height:auto}#top,#gpane,#panel,#bar,#sizeinfo,.rh,.rv,.rcorner,dialog{display:none!important}.rwrap{display:block}#main{display:block}#view{overflow:visible}#wrap{padding:0}
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4;margin:8mm}.obj{outline:none!important}#sheet{zoom:1!important}}
 </style></head><body>
-<div id="panel">
-<h2 style="margin:0">🎵 Музыкальное лото</h2>
-<h3>Список песен / исполнителей</h3>
-<div style="font-size:12px;color:#555">Можно с нумерацией и названиями: «1. Исполнитель - Песня», «2) Исполнитель — Песня», «3;Исполнитель;Песня». На карточки попадут только исполнители (без номеров и песен).</div>
+<div id="top">
+<b style="font-size:15px">🎵 Музыкальное лото</b>
+<button onclick="togglePane('gpane')" title="Показать/скрыть колонку игр">🗂 Игры</button>
+<button onclick="togglePane('panel')" title="Показать/скрыть настройки">⚙ Настройки</button>
+<label class="inl">Карточек <input type="number" id="count" value="12" min="1"></label>
+<button class="primary" onclick="generate()" title="Создать новые случайные карточки">🔄 Сгенерировать</button>
+<button onclick="toggleEdit()" id="editBtn" title="Перетаскивать логотипы, картинки и тексты на карточке">✏️ Редактор макета</button>
+<label class="inl"><input type="checkbox" id="ruler" checked> Линейка</label>
+<label class="inl">Масштаб <input type="range" id="zoom" min="0.3" max="2.5" step="0.05" value="1"></label>
+<span class="sp"></span>
+<button onclick="$('dlg').showModal()">📦 Экспорт и файлы</button>
+<button onclick="doPrint()">🖨 Печать</button>
+</div>
+<div id="main">
+<div id="gpane" class="pane">
+<h3 style="margin-top:0">🎮 Текущая игра</h3>
+<div id="gactive"></div>
+<label>Название<input id="gname" value="" placeholder="Например: Корпоратив"></label>
+<label>Дата<input type="date" id="gdate"></label>
+<div class="small">Список песен или исполнителей. Можно с номерами и названиями песен — на карточки попадут только исполнители.</div>
 <textarea id="list"></textarea>
-<input type="file" id="fileList" accept=".txt,.csv">
+<label>Загрузить из файла<input type="file" id="fileList" accept=".txt,.csv"></label>
 <div id="info"></div>
-<h3>🗂 Архив игр</h3>
-<div class="box gm">
-<label>Название игры<input id="gname" value="" placeholder="Например: Корпоратив"></label>
-<label>Дата игры<input type="date" id="gdate"></label>
 <label>Сохранять вместе с дизайном<input type="checkbox" id="gdesign" style="width:auto"></label>
-<label>Не повторять карточки прошлых наборов<input type="checkbox" id="avoid" checked style="width:auto"></label>
-<button onclick="saveGame(false)">💾 Сохранить игру</button><button onclick="saveGame(true)">➕ Как новую</button>
-<button onclick="commitSet()">📌 Зафиксировать набор</button>
+<label>Не повторять прошлые наборы<input type="checkbox" id="avoid" checked style="width:auto"></label>
+<button onclick="saveGame(true)">💾 Сохранить как новую</button>
+<button id="btnUpd" onclick="saveGame(false)">♻️ Обновить текущую</button>
+<button onclick="newGame()">🆕 Новая игра</button>
+<button onclick="commitSet()" title="Запомнить выданные карточки, чтобы они не повторялись">📌 Зафиксировать набор</button>
 <div id="gstat"></div>
-<div style="margin-top:6px"><button onclick="selAll(true)">☑ Все игры</button><button onclick="selAll(false)">☐ Снять выбор</button></div>
-<button onclick="genSelected()" id="genSel" style="width:100%;background:#e8f0ff">🎲 Новый набор из отмеченных игр (0)</button>
-<div id="games"></div>
+<h3>🗂 Архив игр</h3>
+<button onclick="selAll(true)">☑ Все</button><button onclick="selAll(false)">☐ Снять</button>
+<button onclick="genSelected()" id="genSel" style="width:100%;background:#e8f0ff">🎲 Новый набор из отмеченных (0)</button>
+<div id="glist"></div>
 <button onclick="exportGames()">⬇ Экспорт архива</button>
 <label>Импорт архива<input type="file" id="gimport" accept=".json"></label>
-<div style="font-size:11px;color:#777">В заголовке/подвале можно писать {игра} и {дата} — подставятся данные игры.</div>
+<div class="small">В заголовке и подвале можно писать {игра} и {дата}.</div>
 </div>
-<h3>Карточки</h3>
-<label>Количество карточек<input type="number" id="count" value="12" min="1"></label>
+<div id="panel" class="pane">
+<div style="display:flex;gap:4px;flex-wrap:wrap"><button onclick="allDetails(true)">Развернуть всё</button><button onclick="allDetails(false)">Свернуть всё</button><button onclick="resetDesign()">↺ Сбросить дизайн</button></div>
+<details open><summary>🃏 Карточка: основное</summary><div class="dbody">
 <label>Столбцов<input type="number" id="cols" value="5" min="1" max="12"></label>
 <label>Строк<input type="number" id="rows" value="3" min="1" max="12"></label>
 <label>Центральная «свободная» клетка<input type="checkbox" id="free" style="width:auto"></label>
@@ -82,8 +115,8 @@ button{padding:7px 10px;margin:3px 2px;cursor:pointer}#info,#exp,#gstat{font-siz
 <label>Заголовок<input id="title" value="МУЗЫКАЛЬНОЕ ЛОТО"></label>
 <label>Текст в подвале<input id="footer" value=""></label>
 <label>Нумеровать карточки<input type="checkbox" id="num" checked style="width:auto"></label>
-<h3>Размеры карточки (мм)</h3>
-<label>Линейка в просмотре<input type="checkbox" id="ruler" checked style="width:auto"></label>
+</div></details>
+<details><summary>📐 Размеры карточки (мм)</summary><div class="dbody">
 <label>Ширина карточки<input type="number" id="cw" value="130"></label>
 <label>Высота карточки (0 = авто)<input type="number" id="chh" value="0" min="0"></label>
 <label>Таблица при фикс. высоте<select id="gv"><option value="start">Сверху</option><option value="center">По центру</option><option value="end">Снизу</option><option value="stretch">Растянуть по высоте</option></select></label>
@@ -91,9 +124,10 @@ button{padding:7px 10px;margin:3px 2px;cursor:pointer}#info,#exp,#gstat{font-siz
 <label>Высота подвала<input type="number" id="fh" value="12"></label>
 <label>Отступ между карточками<input type="number" id="gap" value="6"></label>
 <label>Показывать рамку карточки<input type="checkbox" id="cbon" checked style="width:auto"></label>
-<label>Толщина рамки карточки (px)<input type="number" id="cbw" value="2" step="0.5" min="0"></label>
-<label>Скругление карточки (мм)<input type="number" id="rad" value="3"></label>
-<h3>Таблица с названиями (мм)</h3>
+<label>Толщина рамки (px)<input type="number" id="cbw" value="2" step="0.5" min="0"></label>
+<label>Скругление карточки<input type="number" id="rad" value="3"></label>
+</div></details>
+<details><summary>🔲 Таблица с названиями (мм)</summary><div class="dbody">
 <label>Высота ячейки<input type="number" id="ch" value="16" step="0.5"></label>
 <label>Отступ таблицы сверху<input type="number" id="pt" value="0" step="0.5" min="0"></label>
 <label>Отступ таблицы справа<input type="number" id="pr" value="0" step="0.5" min="0"></label>
@@ -102,24 +136,22 @@ button{padding:7px 10px;margin:3px 2px;cursor:pointer}#info,#exp,#gstat{font-siz
 <label>Расстояние между ячейками<input type="number" id="cgap" value="0" step="0.5" min="0"></label>
 <label>Внутренний отступ в ячейке<input type="number" id="cpad" value="1" step="0.5" min="0"></label>
 <label>Скругление ячеек<input type="number" id="crad" value="0" step="0.5" min="0"></label>
-<label>Толщина линий ячеек (px)<input type="number" id="bw" value="1" step="0.5" min="0"></label>
-<label>Выравнивание текста в ячейке<select id="calign"><option value="center">По центру</option><option value="left">По левому краю</option><option value="right">По правому краю</option></select></label>
+<label>Толщина линий (px)<input type="number" id="bw" value="1" step="0.5" min="0"></label>
+<label>Выравнивание текста<select id="calign"><option value="center">По центру</option><option value="left">По левому краю</option><option value="right">По правому краю</option></select></label>
 <label>Вертикально<select id="cvalign"><option value="center">По центру</option><option value="flex-start">Сверху</option><option value="flex-end">Снизу</option></select></label>
 <label>Межстрочный интервал<input type="number" id="clh" value="1.1" step="0.05" min="0.8"></label>
-<h3>Шапка и подвал (мм)</h3>
-<label>Отступ шапки слева/справа<input type="number" id="hpad" value="3" step="0.5" min="0"></label>
-<label>Положение заголовка<select id="halign"><option value="center">По центру</option><option value="space-between">Между логотипами</option><option value="flex-start">Слева</option><option value="flex-end">Справа</option></select></label>
-<label>Отступ подвала слева/справа<input type="number" id="fpad" value="2" step="0.5" min="0"></label>
-<h3>Шрифты</h3>
+</div></details>
+<details><summary>🔤 Шрифты</summary><div class="dbody">
 <label>Шрифт ячеек<select class="fonts" id="font"></select></label>
 <label>Размер шрифта ячеек (pt)<input type="number" id="fs" value="9" step="0.5"></label>
+<label>Жирный текст ячеек<input type="checkbox" id="bold" checked style="width:auto"></label>
+<label>ВСЕ ЗАГЛАВНЫЕ<input type="checkbox" id="upper" style="width:auto"></label>
 <label>Шрифт заголовка<select class="fonts" id="tfont"></select></label>
 <label>Размер заголовка (pt)<input type="number" id="tfs" value="20"></label>
 <label>Шрифт подвала<select class="fonts" id="ffont"></select></label>
 <label>Размер подвала (pt)<input type="number" id="ffs" value="9" step="0.5"></label>
-<label>Жирный текст ячеек<input type="checkbox" id="bold" checked style="width:auto"></label>
-<label>ВСЕ ЗАГЛАВНЫЕ<input type="checkbox" id="upper" style="width:auto"></label>
-<h3>Цвета текста</h3>
+</div></details>
+<details><summary>🎨 Цвета текста</summary><div class="dbody">
 <label>Заголовок<input type="color" id="tc" value="#ffffff"></label>
 <label>Номер карточки<input type="color" id="nc" value="#ffffff"></label>
 <label>Текст ячеек<input type="color" id="xc" value="#222222"></label>
@@ -128,7 +160,8 @@ button{padding:7px 10px;margin:3px 2px;cursor:pointer}#info,#exp,#gstat{font-siz
 <label>Текст подвала<input type="color" id="ftc" value="#222222"></label>
 <label>Обводка текста ячеек (px)<input type="number" id="sw" value="0" step="0.1" min="0"></label>
 <label>Цвет обводки текста<input type="color" id="swc" value="#ffffff"></label>
-<h3>Цвета фона и прозрачность</h3>
+</div></details>
+<details><summary>🖌 Цвета фона и прозрачность</summary><div class="dbody">
 <label>Фон карточки<input type="color" id="bg" value="#ffffff"></label>
 <label>Цвет рамки карточки<input type="color" id="cbc" value="#6a1b9a"></label>
 <label>Цвет шапки<input type="color" id="hc" value="#6a1b9a"></label>
@@ -140,8 +173,10 @@ button{padding:7px 10px;margin:3px 2px;cursor:pointer}#info,#exp,#gstat{font-siz
 <label>2-й цвет ячеек<input type="color" id="cc2" value="#f3e5f5"></label>
 <label>Прозрачность ячеек <span id="cop_v"></span><input type="range" id="cop" min="0" max="1" step="0.05" value="1"></label>
 <label>Цвет линий ячеек<input type="color" id="lc" value="#6a1b9a"></label>
-<label>Прозрачность линий ячеек<input type="range" id="bop" min="0" max="1" step="0.05" value="1"></label>
-<h3>Фоновая картинка карточки</h3>
+<label>Прозрачность линий<input type="range" id="bop" min="0" max="1" step="0.05" value="1"></label>
+</div></details>
+<details><summary>🖼 Фон и логотипы</summary><div class="dbody">
+<b style="font-size:12px">Фоновая картинка</b>
 <label>Файл<input type="file" id="bgimg" accept="image/*"></label>
 <label>Режим<select id="bgfit"><option value="cover">Заполнить (обрезка)</option><option value="contain">Вписать</option><option value="100% 100%">Растянуть</option><option value="tile">Плиткой</option><option value="custom">Свой размер (%)</option></select></label>
 <label>Размер, % ширины<input type="number" id="bgscale" value="50" min="1" max="500"></label>
@@ -149,33 +184,47 @@ button{padding:7px 10px;margin:3px 2px;cursor:pointer}#info,#exp,#gstat{font-siz
 <label>Смещение по Y, %<input type="range" id="bgy" min="0" max="100" value="50"></label>
 <label>Прозрачность картинки<input type="range" id="bgop" min="0" max="1" step="0.05" value="0.15"></label>
 <button onclick="imgs.bgimg='';render()">Убрать фон-картинку</button>
-<h3>Логотипы шапки</h3>
+<b style="font-size:12px">Логотипы шапки</b>
 <label>Лого слева<input type="file" id="logoL" accept="image/*"></label>
 <label>Лого справа<input type="file" id="logoR" accept="image/*"></label>
+<label>Положение заголовка<select id="halign"><option value="center">По центру</option><option value="space-between">Между логотипами</option><option value="flex-start">Слева</option><option value="flex-end">Справа</option></select></label>
 <label>Высота лого шапки (мм)<input type="number" id="lh" value="14"></label>
-<h3>Логотипы в подвале</h3>
+<label>Отступ шапки слева/справа<input type="number" id="hpad" value="3" step="0.5" min="0"></label>
+<b style="font-size:12px">Логотипы подвала</b>
 <label>Добавить (можно несколько)<input type="file" id="logoF" accept="image/*" multiple></label>
 <div id="flogos"></div>
 <label>Расположение<select id="falign"><option value="center">По центру</option><option value="flex-start">По левому краю</option><option value="flex-end">По правому краю</option><option value="space-between">Равномерно, по краям</option><option value="space-around">Равные поля вокруг</option><option value="space-evenly">Равные промежутки</option></select></label>
 <label>Высота лого (мм)<input type="number" id="flh" value="9"></label>
 <label>Расстояние между лого (мм)<input type="number" id="fgap" value="4"></label>
+<label>Отступ подвала слева/справа<input type="number" id="fpad" value="2" step="0.5" min="0"></label>
 <label>Текст подвала<select id="fpos"><option value="before">Перед логотипами</option><option value="after">После логотипов</option><option value="hide">Скрыть</option></select></label>
 <label>Одинаковая ширина лого<input type="checkbox" id="feq" style="width:auto"></label>
-<h3>✏️ Объекты на карточке</h3>
-<div style="font-size:12px;color:#555">Картинки и тексты в любом месте. Включите «Редактор макета» и перетаскивайте мышью.</div>
+</div></details>
+<details><summary>✏️ Объекты на карточке</summary><div class="dbody">
+<div class="small">Картинки и тексты в любом месте. Включите «Редактор макета» вверху и перетаскивайте мышью.</div>
 <label>Добавить картинки<input type="file" id="objImg" accept="image/*" multiple></label>
 <button onclick="addText()">+ Текст</button>
 <div id="olist"></div>
 <div id="props"></div>
-<h3>📦 Сохранение карточек</h3>
+</div></details>
+</div>
+<div id="view">
+<div id="bar" class="hid"><b>Редактор макета.</b> Показана карточка №1. Тяните объекты мышью, розовый квадрат — размер, Delete — удалить, стрелки — сдвиг (Shift — крупнее). Свойства выбранного объекта — в «Настройки → Объекты».</div>
+<div id="sizeinfo"></div>
+<div id="wrap"><div id="sheet"></div></div>
+</div>
+</div>
+<dialog id="dlg">
+<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0;border:none">📦 Экспорт и файлы</h3><button onclick="$('dlg').close()">✕ Закрыть</button></div>
+<h3>Карточки (PNG / PDF)</h3>
 <div class="box">
-<label>Разрешение PNG/PDF<select id="xscale"><option value="2">Среднее (×2)</option><option value="3" selected>Высокое (×3)</option><option value="4">Очень высокое (×4)</option></select></label>
+<label>Разрешение<select id="xscale"><option value="2">Среднее (×2)</option><option value="3" selected>Высокое (×3)</option><option value="4">Очень высокое (×4)</option></select></label>
 <label>Раскладка PDF<select id="xmode"><option value="single">1 карточка = 1 страница</option><option value="a4">A4, несколько на странице</option></select></label>
-<label>Номер карточки<input type="number" id="xn" value="1" min="1"></label>
+<label>Номер одной карточки<input type="number" id="xn" value="1" min="1"></label>
 <button onclick="expOne('png')">PNG выбранной</button><button onclick="expOne('pdf')">PDF выбранной</button><br>
 <button onclick="expAllPng()">Все PNG (ZIP)</button><button onclick="expAllPdfOne()">Все в одном PDF</button><button onclick="expAllPdfZip()">Все PDF отдельно (ZIP)</button>
 <div id="exp"></div></div>
-<h3>📋 Список для ведущего (PDF)</h3>
+<h3>Список для ведущего (PDF)</h3>
 <div class="box">
 <label>Заголовок списка<input id="ltitle" value="Список исполнителей"></label>
 <label>Что выводить<select id="lmode"><option value="artists">Только исполнители (без повторов)</option><option value="songs">Исполнитель — песня</option></select></label>
@@ -183,18 +232,13 @@ button{padding:7px 10px;margin:3px 2px;cursor:pointer}#info,#exp,#gstat{font-siz
 <label>Колонок<input type="number" id="lcols" value="2" min="1" max="4"></label>
 <label>Размер шрифта (pt)<input type="number" id="lfs" value="12" min="6" max="36"></label>
 <button onclick="expList()">⬇ PDF со списком</button></div>
-<h3>Действия</h3>
-<button onclick="toggleEdit()" id="editBtn">✏️ Редактор макета</button>
-<button onclick="generate()">🔄 Сгенерировать заново</button>
-<button onclick="doPrint()">🖨 Печать (A4)</button>
-<button onclick="saveCfg()">💾 Сохранить настройки</button>
+<h3>Файлы</h3>
+<div class="box">
+<button onclick="saveCfg()">💾 Сохранить настройки в файл</button>
 <label>Загрузить настройки<input type="file" id="cfgFile" accept=".json"></label>
 <button onclick="downloadCsv()">⬇ Состав карточек CSV</button>
 </div>
-<div id="view"><div id="bar" style="display:none"><b>Редактор макета</b> показана карточка №1. Тяните объекты мышью, розовый квадрат — размер, Delete — удалить, стрелки — сдвиг.
-<label style="width:220px">Масштаб<input type="range" id="zoom" min="0.5" max="2.5" step="0.05" value="1.2" style="width:120px"></label></div>
-<div id="sizeinfo"></div>
-<div id="wrap"><div id="sheet"></div></div></div>
+</dialog>
 <script>
 const $=id=>document.getElementById(id);
 const FONTS=['Arial','Georgia','Verdana','Impact','Comic Sans MS','Courier New','Trebuchet MS','Times New Roman','Tahoma','Palatino Linotype','Lucida Console'];
@@ -205,11 +249,16 @@ let cards=[],objs=[],sel=null,edit=false,uid=1,activeId=null,sources=[];
 const selG=new Set();
 const ids=['count','cols','rows','free','freeText','title','footer','num','ruler','cw','chh','gv','hh','fh','gap','cbon','cbw','rad','ch','pt','pr','pb','pl','cgap','cpad','crad','bw','calign','cvalign','clh','hpad','halign','fpad','font','fs','tfont','tfs','ffont','ffs','bold','upper','tc','nc','xc','xc2','freeC','ftc','sw','swc','bg','cbc','hc','hop','fc','fop','cc','zebra','cc2','cop','lc','bop','lh','bgop','bgfit','bgscale','bgx','bgy','falign','flh','fgap','fpos','feq','list'];
 function val(id){const e=$(id);return e.type==='checkbox'?e.checked:e.value}
+const DEF={};ids.forEach(i=>{if(i!=='list')DEF[i]=val(i)});
 function rgba(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
 function esc(s){return String(s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function fmtDate(s){const m=/^(\d{4})-(\d\d)-(\d\d)$/.exec(s||'');return m?`${m[3]}.${m[2]}.${m[1]}`:''}
 function fmt(s){return String(s).split('{игра}').join(val('gname')).split('{дата}').join(fmtDate(val('gdate')))}
+function togglePane(id){$(id).classList.toggle('hid')}
+function allDetails(o){document.querySelectorAll('#panel details').forEach(d=>d.open=o)}
+function resetDesign(){if(!confirm('Сбросить все настройки дизайна к исходным? Логотипы и объекты будут удалены. Список песен и архив не изменятся.'))return;
+ applyCfg({...DEF,imgs:{logoL:'',logoR:'',bgimg:'',footer:[]},objs:[]},true);generate()}
 function parseSongs(text){
  const out=[];
  (text||'').split(/\r?\n/).forEach(raw=>{
@@ -262,56 +311,79 @@ function applyCfg(o,keepList){
  Object.assign(imgs,o.imgs||{});if(!Array.isArray(imgs.footer))imgs.footer=[];
  objs=o.objs||[];uid=Math.max(0,...objs.map(x=>x.id))+1;sel=null;renderFlogos();showProps();
 }
+function gmsg(t,ok){$('gstat').innerHTML='<span class="'+(ok?'ok':'err')+'">'+t+'</span>'}
+function detach(msg){
+ if(!activeId&&!sources.length)return;
+ activeId=null;sources=[];renderGames();
+ if(msg)gmsg(msg,true);
+}
+function newGame(){
+ if(!confirm('Начать новую игру? Поле списка и название будут очищены. Сохранённые игры в архиве не изменятся.'))return;
+ activeId=null;sources=[];$('list').value='';$('gname').value='';$('gdate').value=today();
+ renderGames();generate();gmsg('Новая игра. Вставьте список, введите название и нажмите «Сохранить как новую».',true);
+}
 function saveGame(asNew){
  const name=$('gname').value.trim()||'Игра без названия',date=$('gdate').value||today();
- let g=asNew?null:games.find(x=>x.id===activeId);
- const isNew=!g;if(isNew){g={id:Date.now().toString(36),issued:[],sets:0};games.push(g)}
- g.name=name;g.date=date;g.list=$('list').value;g.saved=Date.now();
+ let g;
+ if(asNew){
+  let nm=name,n=2;while(games.some(x=>x.name===nm&&x.date===date))nm=name+' ('+n++ +')';
+  g={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),issued:[],sets:0,name:nm,date};games.push(g);
+ }else{
+  g=games.find(x=>x.id===activeId);
+  if(!g){gmsg('Нет активной игры. Нажмите «Сохранить как новую» или откройте игру из архива.',false);return}
+  if(!confirm('Заменить сохранённую игру «'+g.name+'» текущим списком и данными?'))return;
+  g.name=name;g.date=date;
+ }
+ g.list=$('list').value;g.saved=Date.now();
  g.design=$('gdesign').checked?JSON.parse(JSON.stringify(getCfg())):null;
- if(!persist()){if(isNew)games.pop();return}
+ if(!persist()){if(asNew)games.pop();return}
+ if(asNew)$('gname').value=g.name;
  activeId=g.id;sources=[g.id];renderGames();generate();
- $('gstat').innerHTML='<span class="ok">'+(isNew?'Игра добавлена в архив.':'Игра обновлена.')+'</span>';
+ gmsg(asNew?'Сохранено как новая игра «'+esc(g.name)+'».':'Игра «'+esc(g.name)+'» обновлена.',true);
 }
 function commitSet(){
  const src=games.filter(x=>sources.includes(x.id));
- if(!src.length){$('gstat').innerHTML='<span class="err">Сначала сохраните игру или откройте её из архива.</span>';return}
+ if(!src.length){gmsg('Сначала сохраните игру или откройте её из архива.',false);return}
  if(!cards.length)return;const A=artists(),keys=cards.map(c=>keyOf(c.map(i=>A[i])));
  src.forEach(g=>{const s=new Set(g.issued||[]);keys.forEach(k=>s.add(k));g.issued=[...s];g.sets=(g.sets||0)+1});
- if(persist()){renderGames();$('gstat').innerHTML='<span class="ok">Набор зафиксирован в играх: '+src.map(g=>esc(g.name)).join(', ')+'. Эти карточки больше не повторятся.</span>'}
+ if(persist()){renderGames();gmsg('Набор зафиксирован в играх: '+src.map(g=>esc(g.name)).join(', ')+'. Эти карточки больше не повторятся.',true)}
 }
 function openGame(id,newSet){
  const g=games.find(x=>x.id===id);if(!g)return;
  activeId=id;sources=[id];$('list').value=g.list;$('gname').value=g.name;$('gdate').value=g.date;
  if(!newSet&&g.design)applyCfg(g.design,true);
  renderGames();generate();
- $('gstat').innerHTML='<span class="ok">'+(newSet?'Создан новый набор карточек для игры «'+esc(g.name)+'».':'Игра открыта.')+'</span>';
+ gmsg(newSet?'Создан новый набор карточек для игры «'+esc(g.name)+'».':'Игра открыта.',true);
 }
 function genSelected(){
  const sg=games.filter(g=>selG.has(g.id));
- if(!sg.length){$('gstat').innerHTML='<span class="err">Отметьте галочкой хотя бы одну игру в архиве.</span>';return}
+ if(!sg.length){gmsg('Отметьте галочкой хотя бы одну игру в архиве.',false);return}
  if(sg.length===1){openGame(sg[0].id,true);return}
  activeId=null;sources=sg.map(g=>g.id);
  $('list').value=sg.map(g=>g.list.trim()).join('\n');
  $('gname').value=sg.map(g=>g.name).join(' + ').slice(0,60);$('gdate').value=today();
  renderGames();generate();
- $('gstat').innerHTML='<span class="ok">Объединено игр: '+sg.length+'. Исполнителей в общем пуле: '+artists().length+'. Новый набор создан случайно. Чтобы сохранить объединённый список, нажмите «Сохранить игру».</span>';
+ gmsg('Объединено игр: '+sg.length+'. Исполнителей в общем пуле: '+artists().length+'. Чтобы сохранить объединённый список, нажмите «Сохранить как новую».',true);
 }
 function selAll(v){selG.clear();if(v)games.forEach(g=>selG.add(g.id));renderGames()}
 function delGame(id){const g=games.find(x=>x.id===id);if(!g||!confirm('Удалить игру «'+g.name+'» из архива?'))return;games=games.filter(x=>x.id!==id);selG.delete(id);sources=sources.filter(s=>s!==id);if(activeId===id)activeId=null;persist();renderGames()}
 function renderGames(){
- const box=$('games');box.innerHTML='';
- $('genSel').textContent='🎲 Новый набор из отмеченных игр ('+[...selG].filter(i=>games.some(g=>g.id===i)).length+')';
- if(!games.length){box.innerHTML='<div style="font-size:12px;color:#777">Архив пуст.</div>';return}
+ const box=$('glist');box.innerHTML='';
+ const ag=games.find(g=>g.id===activeId);
+ $('gactive').innerHTML=ag?'Активная игра: <b>'+esc(ag.name)+'</b> · '+fmtDate(ag.date)+'<br><span class="small">«Обновить текущую» заменит её данные.</span>':'Активной игры нет. <span class="small">«Сохранить как новую» создаст запись в архиве.</span>';
+ $('btnUpd').disabled=!ag;
+ $('genSel').textContent='🎲 Новый набор из отмеченных ('+[...selG].filter(i=>games.some(g=>g.id===i)).length+')';
+ if(!games.length){box.innerHTML='<div class="small">Архив пуст.</div>';return}
  games.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.saved-a.saved).forEach(g=>{
   const d=document.createElement('div');d.className='game'+(g.id===activeId?' act':'');
   const songs=parseSongs(g.list).length;
-  d.innerHTML=`<div class="gh"><input type="checkbox" ${selG.has(g.id)?'checked':''}><span><b>${esc(g.name)}</b> · ${fmtDate(g.date)}</span></div>строк: ${songs} · наборов: ${g.sets||0} · карточек выдано: ${(g.issued||[]).length}${g.design?' · с дизайном':''}<br>`;
+  d.innerHTML=`<div class="gh"><input type="checkbox" ${selG.has(g.id)?'checked':''}><span><b>${esc(g.name)}</b> · ${fmtDate(g.date)}</span></div>строк: ${songs} · наборов: ${g.sets||0} · выдано: ${(g.issued||[]).length}${g.design?' · с дизайном':''}<br>`;
   d.querySelector('input').onchange=e=>{e.target.checked?selG.add(g.id):selG.delete(g.id);renderGames()};
   [['Открыть',()=>openGame(g.id,false)],['🔄 Новый набор',()=>openGame(g.id,true)],['🗑',()=>delGame(g.id)]].forEach(([t,f])=>{const b=document.createElement('button');b.textContent=t;b.onclick=f;d.appendChild(b)});
   box.appendChild(d)});
 }
 function exportGames(){dl('lotto-games-'+today()+'.json',JSON.stringify(games),'application/json')}
-$('gimport').onchange=e=>{const r=new FileReader();r.onload=()=>{try{const a=JSON.parse(r.result);if(!Array.isArray(a))throw 0;a.forEach(x=>{const i=games.findIndex(g=>g.id===x.id);if(i>=0)games[i]=x;else games.push(x)});persist();renderGames();$('gstat').innerHTML='<span class="ok">Импортировано игр: '+a.length+'</span>'}catch(err){$('gstat').innerHTML='<span class="err">Неверный файл архива.</span>'}};r.readAsText(e.target.files[0]);e.target.value=''};
+$('gimport').onchange=e=>{const r=new FileReader();r.onload=()=>{try{const a=JSON.parse(r.result);if(!Array.isArray(a))throw 0;a.forEach(x=>{const i=games.findIndex(g=>g.id===x.id);if(i>=0)games[i]=x;else games.push(x)});persist();renderGames();gmsg('Импортировано игр: '+a.length,true)}catch(err){gmsg('Неверный файл архива.',false)}};r.readAsText(e.target.files[0]);e.target.value=''};
 /* ---------- объекты и редактор ---------- */
 function renderFlogos(){
  const box=$('flogos');box.innerHTML='';
@@ -328,12 +400,12 @@ function showProps(){
  const L=$('olist');L.innerHTML='';
  objs.forEach(o=>{const b=document.createElement('button');b.textContent=(o.type==='text'?'T ':'🖼 ')+(o.name||o.id);if(o.id===sel)b.className='on';b.onclick=()=>{sel=o.id;showProps();render()};L.appendChild(b)});
  const P=$('props'),o=cur();
- if(!o){P.innerHTML='<i style="font-size:12px">Объект не выбран</i>';return}
+ if(!o){P.innerHTML='<i class="small">Объект не выбран</i>';return}
  const num=(k,l,min,max,st)=>`<label>${l}<input type="number" data-k="${k}" min="${min}" max="${max}" step="${st}" value="${o[k]}"></label>`;
  const rng=(k,l,min,max,st)=>`<label>${l}<input type="range" data-k="${k}" min="${min}" max="${max}" step="${st}" value="${o[k]}"></label>`;
  let h=num('x','X, % карточки',-100,200,0.5)+num('y','Y, % карточки',-100,200,0.5)+num('w','Ширина, %',1,300,0.5)+num('rot','Поворот, °',-360,360,1)+rng('op','Прозрачность (1 = непрозр.)',0,1,0.05)
  +`<label>Слой<select data-k="layer"><option value="front"${o.layer==='front'?' selected':''}>Поверх всего</option><option value="back"${o.layer==='back'?' selected':''}>Под ячейками</option></select></label>`;
- if(o.type==='text')h=`<label>Текст<textarea data-k="text" style="height:50px;width:160px">${esc(o.text)}</textarea></label>`+num('fs','Размер, pt',4,200,1)
+ if(o.type==='text')h=`<label>Текст<textarea data-k="text" style="height:50px;width:150px">${esc(o.text)}</textarea></label>`+num('fs','Размер, pt',4,200,1)
  +`<label>Шрифт<select data-k="font">${FONTS.map(f=>`<option${f===o.font?' selected':''}>${f}</option>`).join('')}</select></label><label>Цвет<input type="color" data-k="color" value="${o.color}"></label>`
  +`<label>Выравнивание<select data-k="align">${['left','center','right'].map(a=>`<option${a===o.align?' selected':''}>${a}</option>`).join('')}</select></label>`+h;
  h+=`<button id="pDup">Дублировать</button><button id="pDel">Удалить</button><button id="pTop">На передний план</button>`;
@@ -373,7 +445,8 @@ document.addEventListener('keydown',e=>{
  const m={ArrowLeft:['x',-s],ArrowRight:['x',s],ArrowUp:['y',-s],ArrowDown:['y',s]}[e.key];
  if(m){o[m[0]]+=m[1];e.preventDefault();syncProps();render()}
 });
-function toggleEdit(v){edit=v===undefined?!edit:v;$('bar').style.display=edit?'flex':'none';$('editBtn').textContent=edit?'✅ Выйти из редактора':'✏️ Редактор макета';render()}
+function toggleEdit(v){edit=v===undefined?!edit:v;$('bar').classList.toggle('hid',!edit);$('editBtn').textContent=edit?'✅ Выйти из редактора':'✏️ Редактор макета';
+ if(edit){$('panel').classList.remove('hid');document.querySelectorAll('#panel details').forEach(d=>{if(d.textContent.trim().startsWith('✏️ Объекты'))d.open=true})}render()}
 function doPrint(){if(edit)toggleEdit(false);setTimeout(()=>window.print(),150)}
 function bgCss(){
  const f=val('bgfit'),pos=`${val('bgx')}% ${val('bgy')}%`;
@@ -442,20 +515,29 @@ function render(){
   }else sh.appendChild(card);
   if(ci===0)firstH=card.offsetHeight*25.4/96;
  });
- $('sizeinfo').textContent=list.length?`Размер карточки: ${cw} × ${firstH.toFixed(1)} мм`+(+val('chh')>0?' (высота задана)':' (высота по содержимому)')+(val('cbon')?'':' · без рамки'):'';
- sh.style.zoom=edit?$('zoom').value:1;
+ $('sizeinfo').textContent=list.length?`Размер карточки: ${cw} × ${firstH.toFixed(1)} мм`+(+val('chh')>0?' (высота задана)':' (высота по содержимому)')+(val('cbon')?'':' · без рамки')+(edit?'':` · показано карточек: ${list.length}`):'';
+ sh.style.zoom=$('zoom').value;
+ saveState();
 }
+/* ---------- автосохранение состояния ---------- */
+const SK='lotto_state_v1';let stT=null;
+function saveState(){clearTimeout(stT);stT=setTimeout(()=>{
+ const base={gname:val('gname'),gdate:val('gdate'),activeId,sources,cards};
+ try{localStorage.setItem(SK,JSON.stringify({...base,cfg:getCfg()}))}
+ catch(e){try{const c=getCfg();c.imgs={logoL:'',logoR:'',bgimg:'',footer:[]};c.objs=objs.filter(o=>o.type==='text');localStorage.setItem(SK,JSON.stringify({...base,cfg:c}))}catch(e2){}}
+},700)}
 ids.filter(i=>!['list','count','cols','rows','free'].includes(i)).forEach(i=>$(i).addEventListener('input',render));
 ['gname','gdate'].forEach(i=>$(i).addEventListener('input',render));
-$('zoom').addEventListener('input',render);
+$('zoom').addEventListener('input',()=>{$('sheet').style.zoom=$('zoom').value});
 ['count','cols','rows','free','list','avoid'].forEach(i=>$(i).addEventListener('change',generate));
+$('list').addEventListener('paste',()=>{if(activeId)detach('Список вставлен — игра больше не привязана к архиву. «Сохранить как новую» создаст новую запись, старая останется без изменений.')});
 const rd=f=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f)});
-$('fileList').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('list').value=r.result;generate()};r.readAsText(f,'utf-8')};
+$('fileList').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{detach('Загружен новый список — он не привязан к сохранённым играм. Введите название и нажмите «Сохранить как новую».');$('list').value=r.result;e.target.value='';generate()};r.readAsText(f,'utf-8')};
 ['logoL','logoR','bgimg'].forEach(k=>$(k).onchange=async e=>{const f=e.target.files[0];if(!f)return;imgs[k]=await rd(f);render()});
 $('logoF').onchange=async e=>{const a=await Promise.all([...e.target.files].map(rd));imgs.footer.push(...a);e.target.value='';renderFlogos();render()};
 $('objImg').onchange=async e=>{const fs=[...e.target.files];for(const f of fs){addObj({type:'img',src:await rd(f),name:f.name.slice(0,14),x:10+objs.length*3,y:10+objs.length*3})}e.target.value=''};
 function saveCfg(){dl('lotto-settings.json',JSON.stringify(getCfg()),'application/json')}
-$('cfgFile').onchange=e=>{const r=new FileReader();r.onload=()=>{applyCfg(JSON.parse(r.result),false);generate()};r.readAsText(e.target.files[0])};
+$('cfgFile').onchange=e=>{const r=new FileReader();r.onload=()=>{applyCfg(JSON.parse(r.result),false);generate();$('dlg').close()};r.readAsText(e.target.files[0])};
 function downloadCsv(){const A=artists();dl('cards.csv','\ufeff'+cards.map((c,i)=>(i+1)+';'+c.map(x=>'"'+A[x].replace(/"/g,'""')+'"').join(';')).join('\n'),'text/csv')}
 function dl(n,t,m){dlBlob(n,new Blob([t],{type:m}))}
 function dlBlob(n,b){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),10000)}
@@ -567,8 +649,21 @@ const expList=()=>safe(async()=>{
   x.font='22px Arial';x.fillStyle='#888';x.textAlign='center';x.fillText(`Стр. ${p+1} / ${pagesN}`,W/2,H-60);
   pages.push({w:595.28,h:841.89,items:[{jpg:b64(cv.toDataURL('image/jpeg',0.95)),pw:W,ph:H,x:0,y:0,w:595.28,h:841.89}]})}
  dlBlob('songs_list.pdf',buildPdf(pages));status('<span class="ok">Готово: PDF со списком, позиций '+A.length+', страниц '+pagesN+'.</span>')});
+/* ---------- запуск ---------- */
 const demo=[['Баста','Сансара'],['Ленинград','Экспонат'],['Сплин','Выхода нет'],['Земфира','Искала'],['Мумий Тролль','Утекай'],['Кино','Группа крови'],['ДДТ','Осень'],['Би-2','Мой рок-н-ролл'],['Руки Вверх','Алёшка'],['Иванушки International','Тучи'],['Ноггано','Я за тебя'],['Алиса','Небо славян'],['Агата Кристи','Как на войне'],['Король и Шут','Лесник'],['Нервы','Самый лучший день'],['Мираж','Музыка нас связала'],['Любэ','Комбат'],['Сектор Газа','Лирика'],['Многоточие','Не забывай'],['Градусы','Голая'],['Звери','До скорой встречи'],['Чайф','Аргентина-Ямайка 5:0'],['Наутилус Помпилиус','Скованные одной цепью'],['Тату','Нас не догонят'],['Дискотека Авария','Малышка'],['Кровосток','Сквозь'],['Пицца','Оружие'],['Полматери','Ночь'],['Макс Корж','Жить в кайф'],['Zivert','Life']];
 $('list').value=demo.map((d,i)=>`${i+1}. ${d[0]} - ${d[1]}`).join('\n');
 $('gdate').value=today();
-showProps();renderGames();generate();
+let restored=false;
+try{
+ const s=JSON.parse(localStorage.getItem(SK)||'null');
+ if(s&&s.cfg){
+  applyCfg(s.cfg,false);$('gname').value=s.gname||'';$('gdate').value=s.gdate||today();
+  activeId=games.some(g=>g.id===s.activeId)?s.activeId:null;sources=(s.sources||[]).filter(id=>games.some(g=>g.id===id));
+  const n=artists().length;
+  if(Array.isArray(s.cards)&&s.cards.length&&s.cards.every(c=>Array.isArray(c)&&c.every(i=>Number.isInteger(i)&&i<n))){cards=s.cards;restored=true}
+ }
+}catch(e){}
+showProps();renderGames();
+if(restored){$('info').innerHTML='<span class="ok">Восстановлено состояние прошлого сеанса: список, дизайн и '+cards.length+' карточек.</span>';$('xn').max=cards.length;render()}
+else generate();
 </script></body></html>
